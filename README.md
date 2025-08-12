@@ -1,5 +1,4 @@
 # Steghub-Devops-Cloud-Engineer
-# Steghub DevOps Bootcamp
 
 This repository contains my projects and notes from the **Steghub DevOps Bootcamp**.  
 Each folder represents a separate project, with its own README and related files.
