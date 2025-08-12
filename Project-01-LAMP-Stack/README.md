@@ -36,8 +36,8 @@ Despite newer frameworks and stacks, LAMP remains popular because it’s stable,
 - Launch an Ubuntu EC2 instance (I chose t2.micro under the free tier).  
 - Download the SSH private key and set permissions (`chmod 400 key.pem`).  
 - Connect to your instance with SSH:  
-  ```bash
-  ssh -i key.pem ubuntu@<your-ec2-public-ip>
+```bash
+ssh -i key.pem ubuntu@<your-ec2-public-ip>
 Step 1 - Install Apache and Update Firewall
 Apache serves web pages to users. First, update your package list:
 
