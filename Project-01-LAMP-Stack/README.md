@@ -52,6 +52,8 @@ Before starting, ensure you have:
    # Connect via SSH
    ssh -i your-key-name.pem ubuntu@your-ec2-public-ip
    ```
+   <img width="1366" height="768" alt="ssh EC2 instance" src="https://github.com/user-attachments/assets/152a2e29-4c82-40c2-b2f3-818628546509" />
+
 
 ### Step 2: Install Apache Web Server
 
@@ -70,6 +72,7 @@ sudo systemctl status apache2
 ```
 
 **Verification**: Navigate to `http://your-ec2-public-ip` in your browser. You should see the Apache default page.
+<img width="1366" height="768" alt="install apache" src="https://github.com/user-attachments/assets/1dc2b794-bc7c-4c1f-aacd-9cf57cf436dc" />
 
 ### Step 3: Install MySQL Database
 
@@ -80,6 +83,8 @@ sudo apt install mysql-server -y
 # Secure the MySQL installation
 sudo mysql_secure_installation
 ```
+<img width="1366" height="768" alt="install mysql" src="https://github.com/user-attachments/assets/6ba342e7-e3d3-440d-afc6-3ff79bcd462f" />
+
 
 During the secure installation process:
 - Set a strong root password
@@ -97,6 +102,8 @@ sudo apt install php libapache2-mod-php php-mysql -y
 # Verify PHP installation
 php -v
 ```
+<img width="1366" height="768" alt="instal php" src="https://github.com/user-attachments/assets/2a1c3ffa-09dc-40f1-ab53-3b47707f5675" />
+
 
 ### Step 5: Configure Virtual Host
 
@@ -105,11 +112,14 @@ php -v
    sudo mkdir /var/www/lamp_project
    sudo chown -R $USER:$USER /var/www/lamp_project
    ```
+   <img width="1366" height="768" alt="projectlamp" src="https://github.com/user-attachments/assets/6b173e54-29ca-41f4-805b-0bf75b9dfd20" />
+
 
 2. **Create Virtual Host Configuration**
    ```bash
    sudo nano /etc/apache2/sites-available/lamp_project.conf
    ```
+<img width="1366" height="768" alt="project config" src="https://github.com/user-attachments/assets/6befdf4e-9fbb-410a-a293-bce024ce47ad" />
 
 3. **Add Configuration Content**
    ```apache
@@ -135,6 +145,7 @@ php -v
    # Reload Apache
    sudo systemctl reload apache2
    ```
+<img width="1366" height="768" alt="reload apache" src="https://github.com/user-attachments/assets/0c525fc1-5767-469e-92ca-786dd8b76df9" />
 
 ### Step 6: Configure PHP Priority
 
@@ -159,6 +170,8 @@ sudo systemctl reload apache2
    ```bash
    echo 'Hello from LAMP stack on AWS!' > /var/www/lamp_project/index.html
    ```
+   <img width="1366" height="768" alt="test" src="https://github.com/user-attachments/assets/16af4a2a-c63f-4a89-818b-bd7e436758fd" />
+
 
 2. **Create PHP Info File**
    ```bash
@@ -184,6 +197,9 @@ sudo systemctl reload apache2
 - Virtual host is configured correctly
 - All components communicate properly
 
+<img width="1366" height="768" alt="live test" src="https://github.com/user-attachments/assets/aa7cc755-5afe-4ad6-af2a-dae57ce9b604" />
+
+
 ## Troubleshooting
 
 ### Common Issues
@@ -206,25 +222,6 @@ sudo ufw status
 sudo ufw allow 80/tcp
 ```
 
-## Security Considerations
-
-- Remove the PHP info file after testing (it exposes system information)
-- Regularly update all packages: `sudo apt update && sudo apt upgrade`
-- Configure SSL/TLS certificates for production use
-- Implement proper database user permissions
-- Consider using fail2ban for SSH protection
-
-## Next Steps
-
-With your LAMP stack operational, you can:
-
-- Deploy actual web applications
-- Set up additional virtual hosts for multiple sites
-- Configure SSL certificates with Let's Encrypt
-- Implement database backups
-- Set up monitoring and logging
-- Optimize performance settings
-
 ## Contributing
 
 Feel free to submit issues, fork the repository, and create pull requests for any improvements.
@@ -234,5 +231,3 @@ Feel free to submit issues, fork the repository, and create pull requests for an
 This project is open source and available under the MIT License.
 
 ---
-
-**Note**: Remember to clean up AWS resources when not in use to avoid unnecessary charges.
