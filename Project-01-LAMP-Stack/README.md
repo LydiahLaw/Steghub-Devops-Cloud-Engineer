@@ -40,6 +40,9 @@ Before starting, ensure you have:
    - Select `t2.micro` for free tier eligibility
    - Configure security group to allow HTTP (port 80) and SSH (port 22)
    - Download and securely store your key pair
+  
+     <img width="1366" height="768" alt="launch an instance" src="https://github.com/user-attachments/assets/6e9a6372-88ca-47a9-8bce-895a3251f4cb" />
+
 
 2. **Connect to Your Instance**
    ```bash
