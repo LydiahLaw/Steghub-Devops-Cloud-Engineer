@@ -41,78 +41,53 @@ ssh -i key.pem ubuntu@<your-ec2-public-ip>
 Step 1 - Install Apache and Update Firewall
 Apache serves web pages to users. First, update your package list:
 
-bash
-Copy
-Edit
 sudo apt update -y && sudo apt upgrade -y
 sudo apt install apache2 -y
 Check firewall status:
 
-bash
-Copy
-Edit
 sudo ufw status
 If active, allow Apache:
 
-bash
-Copy
-Edit
+
 sudo ufw allow 'Apache Full'
 Verify Apache is running:
 
-bash
-Copy
-Edit
+
 sudo systemctl status apache2
 Open your browser to your EC2 public IP, and you should see the Apache default page.
 
 Step 2 - Install MySQL
 MySQL will store the data for your website. Install it with:
 
-bash
-Copy
-Edit
+
 sudo apt install mysql-server -y
 Secure your installation:
 
-bash
-Copy
-Edit
+
 sudo mysql_secure_installation
 Set a strong root password when prompted and follow the steps to remove anonymous users, disallow remote root login, remove test database, and reload privilege tables.
 
 Step 3 - Install PHP
 PHP runs dynamic code on your server and interacts with MySQL. Install PHP and related modules:
 
-bash
-Copy
-Edit
 sudo apt install php libapache2-mod-php php-mysql -y
 Verify PHP version:
 
-bash
-Copy
-Edit
+
 php -v
 Step 4 - Configure Apache Virtual Host
 Set up a dedicated folder for your project:
 
-bash
-Copy
-Edit
+
 sudo mkdir /var/www/lamp_project
 sudo chown -R $USER:$USER /var/www/lamp_project
 Create a new Apache config file for your project:
 
-bash
-Copy
-Edit
-sudo nano /etc/apache2/sites-available/lamp_project.conf
-Add:
 
-bash
-Copy
-Edit
+sudo nano /etc/apache2/sites-available/lamp_project.conf
+Add this content:
+
+
 <VirtualHost *:80>
     ServerAdmin webmaster@localhost
     DocumentRoot /var/www/lamp_project
@@ -121,46 +96,35 @@ Edit
 </VirtualHost>
 Enable your site and disable default:
 
-bash
-Copy
-Edit
+
 sudo a2ensite lamp_project.conf
 sudo a2dissite 000-default.conf
 sudo apache2ctl configtest
 sudo systemctl reload apache2
 Create a simple index.html to test:
 
-bash
-Copy
-Edit
+
 echo 'Hello from LAMP stack on AWS!' > /var/www/lamp_project/index.html
 Open your EC2 IP in browser — you should see the message.
 
 Step 5 - Enable PHP on the Website
 Edit Apache’s dir.conf to prioritize index.php over index.html:
 
-bash
-Copy
-Edit
+
 sudo nano /etc/apache2/mods-enabled/dir.conf
 Move index.php to the front in the DirectoryIndex line, save, and reload Apache:
 
-bash
-Copy
-Edit
+
 sudo systemctl reload apache2
 Step 6 - Create PHP Script to Test PHP Configuration
 Create an index.php file:
 
-bash
-Copy
-Edit
+
 nano /var/www/lamp_project/index.php
-Add:
+Add this PHP code:
 
 php
-Copy
-Edit
+
 <?php
 phpinfo();
 ?>
