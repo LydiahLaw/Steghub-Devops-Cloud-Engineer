@@ -1,37 +1,65 @@
+<<<<<<< HEAD
 # Steghub-Devops-Cloud-Engineer
+=======
+# Steghub DevOps & Cloud Engineer Portfolio
+>>>>>>> 0615111 (Update root README with portfolio structure and intro)
 
-This repository contains my projects and notes from the **Steghub DevOps Bootcamp**.  
-Each folder represents a separate project, with its own README and related files.
+## Introduction
+This repository contains a collection of DevOps and Cloud engineering projects I’ve worked on. Each project has its own folder with a dedicated README that documents the setup, configuration, and concepts used. The goal is to showcase practical implementations of real-world infrastructure and automation tasks.
 
-## Project Structure
+---
 
-- `LAMP-Stack-AWS` — Deploy a LAMP stack on AWS EC2 (Apache, MySQL, PHP)
-- *(more projects will be added as the bootcamp progresses)*
+## Table of Contents
+1. [About Me](#about-me)  
+2. [Skills & Tools](#skills--tools)  
+3. [Project List](#project-list)  
+   - [LAMP Stack Deployment on AWS EC2](./LAMP-Stack-Deployment)  
+   - [Additional Projects Coming Soon](#)  
+4. [How to Use This Repository](#how-to-use-this-repository)  
+5. [Contact](#contact)  
 
-## How to Navigate
+---
 
+## About Me
+I’m Lydiah Law, a DevOps and Cloud enthusiast. I enjoy building, automating, and managing infrastructure in cloud environments using modern DevOps tools and practices. This repo is where I document my learning journey and share my projects.
+
+---
+
+## Skills & Tools
+- **Cloud Platforms**: AWS, Azure (beginner level)  
+- **Web Servers**: Apache, Nginx  
+- **Databases**: MySQL, PostgreSQL  
+- **Programming/Scripting**: Bash, Python  
+- **Version Control**: Git, GitHub  
+- **Operating Systems**: Linux (Ubuntu, CentOS), Windows Server  
+- **Other Tools**: Docker, Ansible, Terraform (basic)  
+
+---
+
+## Project List
+
+### [LAMP Stack Deployment on AWS EC2](./LAMP-Stack-Deployment)
+Deploying a Linux, Apache, MySQL, and PHP stack on AWS EC2 with Apache virtual hosts and PHP integration for dynamic websites.
+
+### Additional Projects Coming Soon
+More projects on containerization, CI/CD, and cloud automation will be added.
+
+---
+
+## How to Use This Repository
 Each project folder contains:
-- Setup instructions
-- Code/configuration files
-- Screenshots or diagrams (if applicable)
+- A **README.md** file with detailed instructions  
+- Configuration files and scripts (if applicable)  
+- Screenshots and diagrams for better clarity
 
-Example:
-```bash
-cd LAMP-Stack-AWS
-cat README.md
+You can explore each project independently.
 
-Tools and Technologies
-Linux / Ubuntu
+---
 
-AWS
+## Contact
+- **GitHub**: [LydiahLaw](https://github.com/LydiahLaw)  
+- **LinkedIn**: *Add your LinkedIn link here*  
+- **Email**: *Add your professional email here*
 
-Git & GitHub
-
-Docker
-
-Kubernetes
-
-(and more as we go through the bootcamp)
-
-License
-MIT
+---
+*Author: Lydiah Law*
