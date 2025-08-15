@@ -1,4 +1,4 @@
-<img width="1366" height="768" alt="Nginx webpage" src="https://github.com/user-attachments/assets/87143045-dd9e-48bb-9a39-7bc3707cf42f" /># LEMP Stack Deployment on Cloud Server
+# LEMP Stack Deployment on Cloud Server
 
 A complete guide to deploying a LEMP (Linux, Nginx, MySQL, PHP) stack on a virtual server for hosting dynamic web applications.
 
