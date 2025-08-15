@@ -57,6 +57,8 @@ sudo systemctl status nginx
 
 **Verification**: Visit `http://your-server-ip` to see the Nginx welcome page.
 
+<img width="1366" height="768" alt="Nginx webpage" src="https://github.com/user-attachments/assets/87143045-dd9e-48bb-9a39-7bc3707cf42f" />
+
 ### Step 3: MySQL Database Setup
 
 ```bash
