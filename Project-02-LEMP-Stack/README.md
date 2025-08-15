@@ -154,8 +154,6 @@ sudo systemctl reload nginx
 ### Step 6: Testing & Validation
 
 **Create Test Files**:
-<img width="1366" height="768" alt="lemp todolist" src="https://github.com/user-attachments/assets/184b111e-8da4-49ce-8ea6-f414a946116d" />
-
 
 1. **HTML Test File**:
 ```bash
