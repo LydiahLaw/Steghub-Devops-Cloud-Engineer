@@ -1,4 +1,4 @@
-# LEMP Stack Deployment on Cloud Server
+<img width="1366" height="768" alt="Nginx webpage" src="https://github.com/user-attachments/assets/87143045-dd9e-48bb-9a39-7bc3707cf42f" /># LEMP Stack Deployment on Cloud Server
 
 A complete guide to deploying a LEMP (Linux, Nginx, MySQL, PHP) stack on a virtual server for hosting dynamic web applications.
 
@@ -37,6 +37,7 @@ sudo apt update && sudo apt upgrade -y
 # Install essential packages
 sudo apt install curl wget unzip -y
 ```
+<img width="1366" height="768" alt="ssh gitbassh" src="https://github.com/user-attachments/assets/6053c781-abdd-40c8-b0cd-f3ae7396041b" />
 
 ### Step 2: Nginx Installation & Configuration
 
@@ -52,6 +53,7 @@ sudo systemctl enable nginx
 # Verify installation
 sudo systemctl status nginx
 ```
+<img width="1366" height="768" alt="install nginx" src="https://github.com/user-attachments/assets/154664e1-8cf7-4e06-9d75-e520e21fa8ce" />
 
 **Verification**: Visit `http://your-server-ip` to see the Nginx welcome page.
 
@@ -67,6 +69,7 @@ sudo mysql_secure_installation
 # Access MySQL shell
 sudo mysql
 ```
+<img width="1366" height="768" alt="install mysql" src="https://github.com/user-attachments/assets/a50b686a-888a-4829-b100-a5329715ee79" />
 
 **Database Configuration**:
 ```sql
@@ -93,6 +96,7 @@ php -v
 sudo systemctl start php8.1-fpm
 sudo systemctl enable php8.1-fpm
 ```
+<img width="1366" height="768" alt="install php" src="https://github.com/user-attachments/assets/81db464c-c334-491b-9b55-9894b45344f3" />
 
 ### Step 5: Nginx-PHP Integration
 
@@ -124,6 +128,7 @@ server {
     }
 }
 ```
+<img width="1366" height="768" alt="testing php" src="https://github.com/user-attachments/assets/6a9ba0c4-3900-41f5-b095-8f61ec9eee06" />
 
 **Enable the Site**:
 ```bash
@@ -142,10 +147,13 @@ sudo nginx -t
 # Reload Nginx
 sudo systemctl reload nginx
 ```
+<img width="1366" height="768" alt="php webpage" src="https://github.com/user-attachments/assets/ee892940-2bdd-46f9-bd31-24453e023879" />
 
 ### Step 6: Testing & Validation
 
 **Create Test Files**:
+<img width="1366" height="768" alt="lemp todolist" src="https://github.com/user-attachments/assets/184b111e-8da4-49ce-8ea6-f414a946116d" />
+
 
 1. **HTML Test File**:
 ```bash
@@ -185,6 +193,9 @@ try {
 - **PHP**: `http://your-server-ip/info.php` shows PHP configuration
 - **Database**: `http://your-server-ip/db_test.php` confirms MySQL connectivity
 
+<img width="1366" height="768" alt="lemp todolist" src="https://github.com/user-attachments/assets/1c114a4e-7bef-472d-9800-3ff4a79abe18" />
+
+
 ## Security Hardening
 
 ```bash
@@ -211,6 +222,8 @@ gzip on;
 gzip_vary on;
 gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
 ```
+<img width="1366" height="768" alt="Nginx webpage" src="https://github.com/user-attachments/assets/c9eae267-512f-4308-89a2-f79257b3e7b0" />
+
 
 **PHP-FPM Tuning**:
 ```bash
@@ -259,8 +272,8 @@ lemp-stack-deployment/
 │   └── db_test.php
 ├── scripts/
 │   └── setup.sh
-└── documentation/
-    └── screenshots/
+└── screenshots/
+    
 ```
 
 ## Learning Outcomes
