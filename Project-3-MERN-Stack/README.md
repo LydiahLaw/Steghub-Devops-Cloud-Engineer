@@ -26,8 +26,6 @@ Our To-Do app will let users:
 - View all their current tasks
 - Delete completed tasks
 
-Simple? Yes. But behind this simplicity lies a powerful full-stack architecture that demonstrates modern web development practices.
-
 ### Understanding the MERN Stack
 
 | Component | What It Does | Why We Use It |
@@ -37,7 +35,7 @@ Simple? Yes. But behind this simplicity lies a powerful full-stack architecture 
 | **React.js** | Powers our user interface | Component-based architecture for building interactive UIs |
 | **Node.js** | Runs JavaScript on the server | Allows us to use JavaScript everywhere in our stack |
 
-Think of it this way: When you click "Add Task" in your browser, React captures that action, sends it to our Express server running on Node.js, which then saves it to MongoDB. It's like a well-orchestrated team where each player has a specific role.
+When you click "Add Task" in your browser, React captures that action, sends it to our Express server running on Node.js, which then saves it to MongoDB. It's like a well-orchestrated team where each player has a specific role.
 
 ## Prerequisites
 
@@ -72,10 +70,11 @@ First things first - we need a server to work with. Let's get an Ubuntu instance
    # Then connect via SSH
    ssh -i your-key.pem ubuntu@your-ec2-public-ip
    ```
+<img width="1366" height="768" alt="ssh ubuntu" src="https://github.com/user-attachments/assets/a732e115-7b67-4e5b-ac44-27717194cc69" />
 
 ### Step 1: Configure the Backend
 
-Now we're getting to the fun part! Let's set up our backend environment.
+Let's set up our backend environment.
 
 #### Get Your Server Ready
 ```bash
@@ -97,7 +96,9 @@ node -v
 npm -v
 ```
 
-You should see version numbers for both Node.js and npm. If you do, you're golden!
+You should see version numbers for both Node.js and npm!
+<img width="1366" height="768" alt="install node js" src="https://github.com/user-attachments/assets/aa97c657-13b4-41db-8f1a-27f339d3a879" />
+
 
 #### Create Your Project Foundation
 ```bash
@@ -119,6 +120,7 @@ npm install express
 npm install dotenv
 npm install mongoose
 ```
+<img width="1366" height="768" alt="Install ExpressJS" src="https://github.com/user-attachments/assets/d7ca00f7-4b7e-412a-b83e-9ccc1f7f517d" />
 
 #### Build the Server Foundation
 
@@ -151,7 +153,7 @@ app.listen(port, () => {
 });
 ```
 
-What's happening here? We're creating an Express server that listens on port 5000 and sends a welcome message to anyone who visits. The CORS headers allow our frontend to communicate with the backend later.
+We're creating an Express server that listens on port 5000 and sends a welcome message to anyone who visits. The CORS headers allow our frontend to communicate with the backend later.
 
 #### Set Up Your API Routes
 
@@ -200,6 +202,7 @@ router.delete('/todos/:id', (req, res, next) => {
 
 module.exports = router;
 ```
+<img width="1366" height="768" alt="vim api js" src="https://github.com/user-attachments/assets/7f5c8082-db8a-4b5b-a84c-30a2d40425e0" />
 
 #### Create Your Data Model
 
@@ -240,6 +243,7 @@ Add your MongoDB connection string:
 ```
 DB=mongodb+srv://username:password@cluster-url/database?retryWrites=true&w=majority
 ```
+<img width="1366" height="768" alt="mongo cluster connect" src="https://github.com/user-attachments/assets/265f5aaa-0270-40e6-8383-fc0c076e9449" />
 
 Replace the placeholders with your actual MongoDB Atlas credentials.
 
@@ -290,6 +294,8 @@ node index.js
 ```
 
 If you see "Database connected successfully", you're ready for the next step!
+<img width="1366" height="768" alt="Database connected" src="https://github.com/user-attachments/assets/5c354e33-9ab2-4bfe-9710-5c8c5e483b7c" />
+
 
 ### Step 2: Test the Backend Code with Postman
 
@@ -302,6 +308,9 @@ Before we build our fancy frontend, let's make sure our backend actually works. 
 3. Set up a database user with a secure password
 4. Whitelist your IP address (or use 0.0.0.0/0 for testing)
 5. Get your connection string and update your `.env` file
+
+<img width="1366" height="768" alt="network access" src="https://github.com/user-attachments/assets/c8ad30b9-92e8-4ecd-932d-5632ccb3e3ab" />
+
 
 #### Testing with Postman
 
@@ -326,6 +335,8 @@ Before we build our fancy frontend, let's make sure our backend actually works. 
 - Replace TASK_ID with an actual ID from your GET request
 
 If all three operations work, your backend is solid!
+<img width="1366" height="768" alt="get and Post" src="https://github.com/user-attachments/assets/4ca4a025-8694-46f8-9372-820de49accfe" />
+
 
 ### Step 3: Create the Frontend
 
@@ -335,6 +346,7 @@ Time to build the part users will actually see and interact with.
 # Make sure you're in the Todo directory
 npx create-react-app client
 ```
+<img width="1366" height="768" alt="react app" src="https://github.com/user-attachments/assets/42c7a029-a752-431d-9020-330e85c966be" />
 
 This command creates a complete React application structure in a `client` folder. Grab a coffee while it downloads and installs everything - it takes a few minutes.
 
@@ -349,6 +361,9 @@ npm install concurrently --save-dev
 # This automatically restarts our server when we make changes
 npm install nodemon --save-dev
 ```
+<img width="1366" height="768" alt="mdir components" src="https://github.com/user-attachments/assets/18e7326e-50d9-46c5-904b-f1b2f4769dec" />
+
+
 
 #### Configure Development Scripts
 
@@ -363,6 +378,7 @@ Open your main `package.json` file (the one in the Todo directory, not the clien
 ```
 
 This setup is pretty clever - the `dev` script starts both our backend server and React development server with one command.
+<img width="1366" height="768" alt="vim index js" src="https://github.com/user-attachments/assets/0b6ab0e9-1095-43eb-98fd-59b4e74ca112" />
 
 #### Set Up the Proxy
 
@@ -375,6 +391,7 @@ Add this line somewhere in the JSON (not inside another object):
 ```json
 "proxy": "http://localhost:5000"
 ```
+<img width="1366" height="768" alt="port 5000" src="https://github.com/user-attachments/assets/c17244a1-5ee7-4eac-9689-af5508a5b351" />
 
 This proxy setting is a game-changer. Instead of writing full URLs like `http://localhost:5000/api/todos` in our React code, we can just use `/api/todos`. Much cleaner!
 
@@ -386,6 +403,7 @@ This is where we'll build the user interface components that make our app intera
 - A list component to display all tasks
 - Individual task components with delete functionality
 - Proper state management to keep everything in sync
+<img width="1366" height="768" alt="react app" src="https://github.com/user-attachments/assets/5fdad5f9-6afa-41b4-8744-12a140941fbc" />
 
 ### Step 5: Run the App
 
@@ -406,6 +424,8 @@ You'll see both servers start up:
 Don't forget to open port 3000 in your EC2 security group so you can access the app from your browser!
 
 Visit `http://your-ec2-ip:3000` and you should see your React app running.
+<img width="1366" height="768" alt="todo list working" src="https://github.com/user-attachments/assets/6ee485d3-d505-46d8-aaae-5f10fe6f8b2f" />
+
 
 ## What You'll Learn Along the Way
 
@@ -419,30 +439,11 @@ Visit `http://your-ec2-ip:3000` and you should see your React app running.
 - **Frontend frameworks** like React manage user interfaces and user interactions
 - **RESTful APIs** provide a standard way for frontend and backend to communicate
 
-### Modern Development Practices
-- Environment variables keep sensitive information secure
-- Package managers like npm handle dependencies automatically
-- Development tools like nodemon and concurrently streamline the coding process
-
 ## Common Issues and Solutions
 
 **"Cannot connect to database"**: 
-- Double-check your MongoDB Atlas connection string
-- Make sure your IP is whitelisted in Atlas
+- I double-checked my MongoDB Atlas connection string
 - Verify your username and password are correct
-
-**"Port already in use"**: 
-```bash
-# See what's using your ports
-sudo netstat -tlnp | grep :5000
-# Kill the process if needed
-sudo kill -9 <process-id>
-```
-
-**React app won't load**: 
-- Check that port 3000 is open in your EC2 security group
-- Make sure you're accessing the right IP address
-- Look for error messages in the browser console
 
 ## Conclusion
 
