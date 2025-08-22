@@ -122,22 +122,18 @@ curl -s http://localhost:3300
 
 **Remote test:** open browser with http://<EC2-Public-IP>:3300
 
-The page should display a form to add books and a table showing the current list.
+The page should display a form to add books and a table showing the current list as below. I tested by adding book names.
 
 ---
 
 ## 8. Challenges & Lessons Learned
 
-- Encountered MongoDB package repo issues; fixed by adding correct GPG key and source list.
-
-- Learned how path-to-regexp errors occur if routes are misconfigured.
+- I learnt how path-to-regexp errors occur if routes are misconfigured.
 
 - Understood better how AngularJS communicates with backend via $http.
-
-- Reinforced AWS basics: EC2 instance setup, SSH keys, security groups.
 
 ---
 
 ## 9. Conclusion
 
-This project reinforced the understanding of deploying full-stack applications on cloud infrastructure. By combining MongoDB, Express, AngularJS, and Node.js, I successfully deployed a working Book Register application accessible over the internet through an AWS EC2 instance.
+This project reinforced my understanding of deploying full-stack applications on cloud infrastructure. By combining MongoDB, Express, AngularJS, and Node.js, I successfully deployed a working Book Register application accessible over the internet through an AWS EC2 instance.
