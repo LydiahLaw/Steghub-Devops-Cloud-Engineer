@@ -1,15 +1,15 @@
 # Project 04 - MEAN Stack Deployment on AWS EC2 (Ubuntu)
 
 ## Table of Contents
-1. Introduction  
-2. Problem Statement  
-3. Solution Overview  
-4. Tech Stack  
-5. Architecture  
-6. Setup & Implementation Steps  
-7. Testing the Application  
-8. Challenges & Lessons Learned  
-9. Conclusion  
+1. [Introduction](#1-introduction)  
+2. [Problem Statement](#2-problem-statement)  
+3. [Solution Overview](#3-solution-overview)  
+4. [Tech Stack](#4-tech-stack)  
+5. [Architecture](#5-architecture)  
+6. [Setup & Implementation Steps](#6-setup--implementation-steps)  
+7. [Testing the Application](#7-testing-the-application)  
+8. [Challenges & Lessons Learned](#8-challenges--lessons-learned)  
+9. [Conclusion](#9-conclusion)  
 
 ---
 
