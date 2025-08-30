@@ -46,6 +46,10 @@ I configured MySQL to accept remote connections, created a dedicated user for th
   - SSH access (port 22) from your IP
   - MySQL access (port 3306) allowed **only from the client EC2's private IP**
 - Attach this security group to the mysql server EC2 instance.
+<img width="1366" height="768" alt="instances running" src="https://github.com/user-attachments/assets/bd9ae011-04e8-49c6-bc47-ca04df629df2" />
+
+<img width="1366" height="768" alt="security groups" src="https://github.com/user-attachments/assets/9b794061-1117-484f-b143-2f012d1c5f8b" />
+
 
 ### 2. Install MySQL on the Server EC2
 
@@ -53,6 +57,9 @@ I configured MySQL to accept remote connections, created a dedicated user for th
 sudo apt update
 sudo apt install mysql-server -y
 ```
+<img width="1366" height="768" alt="install mysl server" src="https://github.com/user-attachments/assets/cf315b3d-59b0-4aa7-97ab-85040911923b" />
+
+<img width="1366" height="768" alt="install mysl server" src="https://github.com/user-attachments/assets/829ecb3d-399f-4df4-a8a1-b6031c9de885" />
 
 ### 3. Update MySQL Configuration
 Edit the MySQL config file:
@@ -72,6 +79,7 @@ Restart MySQL:
 ```bash
 sudo systemctl restart mysql
 ```
+<img width="1366" height="768" alt="mysql running" src="https://github.com/user-attachments/assets/42cb121a-49f9-485f-a8c0-96bcfeddc187" />
 
 ### 4. Create a Remote MySQL User
 Log into MySQL shell:
@@ -87,11 +95,14 @@ CREATE USER 'remoteuser'@'172.31.36.252' IDENTIFIED BY 'Devopslearn';
 GRANT ALL PRIVILEGES ON *.* TO 'remoteuser'@'172.31.36.252' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 ```
+<img width="1366" height="768" alt="user permissions" src="https://github.com/user-attachments/assets/421bcdb7-10bb-4a7c-9d2a-9978e023187e" />
 
 > **Note:** 172.31.36.252 is the private IP of the client EC2.
 
 ### 5. Update Security Groups
 On the MySQL server EC2 security group, confirm port 3306 allows inbound traffic from the client EC2's private IP only.
+<img width="1366" height="768" alt="aurora inbound" src="https://github.com/user-attachments/assets/54f68ac9-5a08-40d1-95ba-d9232ff62957" />
+
 
 ### 6. Connect from the Client EC2
 Run the following from the client EC2:
@@ -99,8 +110,10 @@ Run the following from the client EC2:
 ```bash
 mysql -h 34.203.194.118 -P 3306 -u remoteuser -p
 ```
+<img width="1366" height="768" alt="connection succedded" src="https://github.com/user-attachments/assets/451342d1-b54d-4173-939f-5cd31e392fee" />
 
 > **Note:** 34.203.194.118 is the MySQL server's public IP. Enter the password (Devopslearn) to connect.
+<img width="1366" height="768" alt="show databases" src="https://github.com/user-attachments/assets/0632b982-ae63-4ae4-8880-66869dc73a55" />
 
 ## Lessons Learned
 - MySQL requires the private IP of the client when creating the remote user
