@@ -1,36 +1,32 @@
 # CLIENT-SERVER ARCHITECTURE
 
 ## Table of Contents
-
 - [Problem](#problem)
 - [Solution](#solution)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Step-by-Step Implementation](#step-by-step-implementation)
-  - [1. Install MySQL on the Server EC2](#1-install-mysql-on-the-server-ec2)
-  - [2. Update MySQL Configuration](#2-update-mysql-configuration)
-  - [3. Create a Remote MySQL User](#3-create-a-remote-mysql-user)
-  - [4. Update Security Groups](#4-update-security-groups)
-  - [5. Connect from the Client EC2](#5-connect-from-the-client-ec2)
+  - [1. Create EC2 Instances and Security Groups](#1-create-ec2-instances-and-security-groups)
+  - [2. Install MySQL on the Server EC2](#2-install-mysql-on-the-server-ec2)
+  - [3. Update MySQL Configuration](#3-update-mysql-configuration)
+  - [4. Create a Remote MySQL User](#4-create-a-remote-mysql-user)
+  - [5. Update Security Groups](#5-update-security-groups)
+  - [6. Connect from the Client EC2](#6-connect-from-the-client-ec2)
 - [Lessons Learned](#lessons-learned)
 - [Conclusion](#conclusion)
 
 ## Problem
-
 When applications run on different servers, one server may need to connect to a MySQL database hosted on another. By default, MySQL blocks external connections for security reasons. The challenge was to configure MySQL and AWS so that a client EC2 instance could connect remotely to a MySQL database running on another EC2.
 
 ## Solution
-
 I configured MySQL to accept remote connections, created a dedicated user for the client EC2, and updated AWS security groups to allow communication on port 3306.
 
 ## Tech Stack
-
 - AWS EC2 (Ubuntu 20.04)
 - MySQL Server
 - Linux CLI (Ubuntu terminal / Git Bash)
 
 ## Architecture
-
 - **MySQL Server EC2**
   - Public IP: 34.203.194.118
   - Runs MySQL and listens on port 3306
@@ -41,15 +37,24 @@ I configured MySQL to accept remote connections, created a dedicated user for th
 
 ## Step-by-Step Implementation
 
-### 1. Install MySQL on the Server EC2
+### 1. Create EC2 Instances and Security Groups
+- Launch two Ubuntu 20.04 EC2 instances:
+  - Server A: **mysql server**
+  - Server B: **mysql client**
+- Ensure both are in the same VPC so they can communicate with each other.
+- Create a **security group** for the mysql server with:
+  - SSH access (port 22) from your IP
+  - MySQL access (port 3306) allowed **only from the client EC2's private IP**
+- Attach this security group to the mysql server EC2 instance.
+
+### 2. Install MySQL on the Server EC2
 
 ```bash
 sudo apt update
 sudo apt install mysql-server -y
 ```
 
-### 2. Update MySQL Configuration
-
+### 3. Update MySQL Configuration
 Edit the MySQL config file:
 
 ```bash
@@ -68,8 +73,7 @@ Restart MySQL:
 sudo systemctl restart mysql
 ```
 
-### 3. Create a Remote MySQL User
-
+### 4. Create a Remote MySQL User
 Log into MySQL shell:
 
 ```bash
@@ -86,12 +90,10 @@ FLUSH PRIVILEGES;
 
 > **Note:** 172.31.36.252 is the private IP of the client EC2.
 
-### 4. Update Security Groups
+### 5. Update Security Groups
+On the MySQL server EC2 security group, confirm port 3306 allows inbound traffic from the client EC2's private IP only.
 
-On the MySQL server EC2 security group, open port 3306 for inbound traffic from the client EC2's private IP.
-
-### 5. Connect from the Client EC2
-
+### 6. Connect from the Client EC2
 Run the following from the client EC2:
 
 ```bash
@@ -101,11 +103,9 @@ mysql -h 34.203.194.118 -P 3306 -u remoteuser -p
 > **Note:** 34.203.194.118 is the MySQL server's public IP. Enter the password (Devopslearn) to connect.
 
 ## Lessons Learned
-
 - MySQL requires the private IP of the client when creating the remote user
 - The client connects using the server's public IP
 - Both MySQL config and AWS security group rules must be correctly set for the connection to succeed
 
 ## Conclusion
-
 I successfully connected one EC2 instance to a MySQL database hosted on another EC2. This project clarified the relationship between private IPs (for MySQL user creation), public IPs (for external connection), and the importance of correctly configuring AWS security groups and MySQL server settings.
