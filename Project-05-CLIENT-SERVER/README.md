@@ -61,7 +61,15 @@ sudo apt install mysql-server -y
 
 <img width="1366" height="768" alt="install mysl server" src="https://github.com/user-attachments/assets/829ecb3d-399f-4df4-a8a1-b6031c9de885" />
 
-### 3. Update MySQL Configuration
+### 3. On mysql client Linux Server install MySQL Client software.
+```bash
+sudo apt update
+sudo apt install mysql-client -y
+```
+<img width="1366" height="768" alt="install client server" src="https://github.com/user-attachments/assets/5a2ebefc-743d-405b-884e-9130da2b840e" />
+
+
+### 4. Update MySQL Configuration
 Edit the MySQL config file:
 
 ```bash
@@ -81,7 +89,7 @@ sudo systemctl restart mysql
 ```
 <img width="1366" height="768" alt="mysql running" src="https://github.com/user-attachments/assets/42cb121a-49f9-485f-a8c0-96bcfeddc187" />
 
-### 4. Create a Remote MySQL User
+### 5. Create a Remote MySQL User
 Log into MySQL shell:
 
 ```bash
@@ -99,12 +107,12 @@ FLUSH PRIVILEGES;
 
 > **Note:** 172.31.36.252 is the private IP of the client EC2.
 
-### 5. Update Security Groups
+### 6. Update Security Groups
 On the MySQL server EC2 security group, confirm port 3306 allows inbound traffic from the client EC2's private IP only.
 <img width="1366" height="768" alt="aurora inbound" src="https://github.com/user-attachments/assets/54f68ac9-5a08-40d1-95ba-d9232ff62957" />
 
 
-### 6. Connect from the Client EC2
+### 7. Connect from the Client EC2
 Run the following from the client EC2:
 
 ```bash
