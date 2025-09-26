@@ -1,6 +1,7 @@
 # DevOps Tooling Website Solution
 
 A scalable 3-tier web infrastructure implementation demonstrating enterprise-level DevOps practices through Network File System (NFS) shared storage and centralized database management. This project solves the fundamental challenge of horizontal web server scaling by creating stateless servers that maintain data consistency across the infrastructure.
+<img width="1024" height="678" alt="devops archi" src="https://github.com/user-attachments/assets/1ac06d3d-5896-4ffe-b05e-90ff74c32610" />
 
 ## Table of Contents
 
@@ -61,11 +62,13 @@ I began by creating the foundational infrastructure in AWS, establishing five EC
 - 1 NFS Server (RHEL 10): Centralized file storage
 - 1 Database Server (RHEL 10): MySQL database hosting  
 - 3 Web Servers (RHEL 10): Application servers
+<img width="1366" height="768" alt="nfs server instance" src="https://github.com/user-attachments/assets/5c31dfe7-a177-4185-a1a5-f1e7848e8468" />
 
 I configured security groups to control network access between tiers:
 - Web servers: HTTP (80) and SSH (22) access
 - NFS server: NFS ports (111, 2049, 20048) from web server subnet
 - Database server: MySQL (3306) from web server subnet
+<img width="1366" height="768" alt="add inbound rules" src="https://github.com/user-attachments/assets/a9a54379-7120-481b-8dcd-d1f2cc299a18" />
 
 All instances were deployed in the same subnet (172.31.16.0/20) to simplify initial networking while maintaining proper security boundaries through security groups.
 
@@ -75,6 +78,8 @@ The NFS server serves as the centralized storage solution, ensuring all web serv
 
 **Storage Infrastructure Setup:**
 I attached three EBS volumes to the NFS server and configured them using LVM:
+<img width="1366" height="768" alt="volumes attached" src="https://github.com/user-attachments/assets/e677de0c-adf2-478f-820a-2c54127739d2" />
+
 
 ```bash
 # Created physical volumes
@@ -88,6 +93,9 @@ sudo lvcreate -n lv-apps -L 9.5G nfs-vg
 sudo lvcreate -n lv-logs -L 9.5G nfs-vg  
 sudo lvcreate -n lv-opt -L 9.5G nfs-vg
 ```
+<img width="1366" height="768" alt="physical volumes created" src="https://github.com/user-attachments/assets/3dee46af-2d99-4325-b215-f49aa1479f85" />
+<img width="1366" height="768" alt="volume grp and logical volumes created" src="https://github.com/user-attachments/assets/83e3fbdb-72f2-4f71-97f2-cb5503df0a8e" />
+
 
 I formatted the volumes with XFS filesystem for better performance with large files:
 ```bash
@@ -95,6 +103,7 @@ sudo mkfs -t xfs /dev/nfs-vg/lv-apps
 sudo mkfs -t xfs /dev/nfs-vg/lv-logs
 sudo mkfs -t xfs /dev/nfs-vg/lv-opt
 ```
+<img width="1366" height="768" alt="format with XFS" src="https://github.com/user-attachments/assets/e15d0ebe-10e9-471f-9a7f-b39f8c39dc43" />
 
 **NFS Service Configuration:**
 I installed and configured the NFS server to export the logical volumes:
@@ -104,6 +113,7 @@ sudo yum install nfs-utils -y
 sudo systemctl start nfs-server
 sudo systemctl enable nfs-server
 ```
+<img width="1366" height="768" alt="nfs install" src="https://github.com/user-attachments/assets/db53d3c4-803f-460c-956a-dff3a2e203f5" />
 
 I configured the exports to allow access from the web server subnet:
 ```bash
@@ -112,12 +122,14 @@ I configured the exports to allow access from the web server subnet:
 /mnt/logs 172.31.16.0/20(rw,sync,no_all_squash,no_root_squash)
 /mnt/opt 172.31.16.0/20(rw,sync,no_all_squash,no_root_squash)
 ```
+<img width="1366" height="768" alt="exports configured" src="https://github.com/user-attachments/assets/782eb76f-55a5-4e9d-a88a-391328ab2ebb" />
 
 I set appropriate permissions to ensure web servers could read, write, and execute files:
 ```bash
 sudo chown -R nobody: /mnt/apps /mnt/logs /mnt/opt
 sudo chmod -R 777 /mnt/apps /mnt/logs /mnt/opt
 ```
+<img width="1366" height="768" alt="set permisions on the webservers" src="https://github.com/user-attachments/assets/5aa8f9cc-dc75-4600-88a4-dd7f292f7bef" />
 
 ### Step 3: Database Server Setup
 
@@ -129,6 +141,7 @@ sudo yum install mysql-server -y
 sudo systemctl start mysqld
 sudo systemctl enable mysqld
 ```
+<img width="1366" height="768" alt="sql mariadb installed" src="https://github.com/user-attachments/assets/46d8e19c-3017-442b-bd18-a8fd1c94f7c0" />
 
 I created the application database and configured a dedicated user with subnet-based access:
 
@@ -138,12 +151,14 @@ CREATE USER 'webaccess'@'172.31.16.0/255.255.240.0' IDENTIFIED BY 'Devopslearn12
 GRANT ALL PRIVILEGES ON tooling.* TO 'webaccess'@'172.31.16.0/255.255.240.0';
 FLUSH PRIVILEGES;
 ```
+<img width="1366" height="768" alt="tooling db created" src="https://github.com/user-attachments/assets/7969b1da-908a-4d2a-a419-3d9d32514fcf" />
 
 This configuration allows any web server in the subnet to access the database while maintaining security through network-based restrictions.
 
 ### Step 4: Web Servers Configuration
 
 I configured three identical web servers to demonstrate the stateless architecture. Each server mounts the same NFS shares and connects to the same database.
+<img width="1366" height="768" alt="webservers created" src="https://github.com/user-attachments/assets/a9029173-eb4c-4a6d-a968-5c749ed5c84b" />
 
 **NFS Client Setup:**
 On each web server, I installed NFS utilities and mounted the shared storage:
@@ -153,15 +168,18 @@ sudo yum install nfs-utils nfs4-acl-tools -y
 sudo mkdir /var/www
 sudo mount -t nfs -o rw,nosuid 172.31.26.173:/mnt/apps /var/www
 ```
+<img width="1366" height="768" alt="nfs client packages installed on all webservers" src="https://github.com/user-attachments/assets/cff68267-2d49-4429-bd55-23a4154ce572" />
 
 **LAMP Stack Installation (RHEL 10):**
 I adapted the installation process for RHEL 10, which required different package management approaches:
+<img width="1366" height="768" alt="rhel repo web1" src="https://github.com/user-attachments/assets/35df07cf-2cc5-48ec-8621-6f763bf54aee" />
 
 ```bash
 sudo yum install httpd -y
 sudo yum install php php-common php-opcache php-cli php-gd php-curl php-mysqlnd php-fpm -y
 sudo dnf install mariadb -y  # MySQL client compatibility
 ```
+<img width="1366" height="768" alt="mariadb tooling" src="https://github.com/user-attachments/assets/8914bce4-5c50-44f9-90ae-31f673186268" />
 
 **Application Deployment:**
 I deployed the tooling application to the shared NFS storage, ensuring all servers serve identical content:
@@ -170,6 +188,7 @@ I deployed the tooling application to the shared NFS storage, ensuring all serve
 git clone https://github.com/StegTechHub/tooling.git
 sudo cp -R tooling/html/* /var/www/html/
 ```
+<img width="1366" height="768" alt="gitclone web1" src="https://github.com/user-attachments/assets/908537e4-e36b-47a3-a299-0822fd8dcd59" />
 
 **Database Integration:**
 I configured the application to connect to the centralized database by updating the connection parameters in functions.php:
@@ -182,6 +201,7 @@ I applied the database schema from the first web server:
 ```bash
 mysql -h 172.31.22.114 -u webaccess -p tooling < /var/www/html/tooling-db.sql
 ```
+<img width="1366" height="768" alt="varww mounted" src="https://github.com/user-attachments/assets/edca95bf-efca-43c9-8ad5-14d8a03e6cef" />
 
 ## Challenges and Solutions
 
@@ -196,16 +216,6 @@ mysql -h 172.31.22.114 -u webaccess -p tooling < /var/www/html/tooling-db.sql
 
 **Learning:** Always verify OS compatibility when following documentation, and be prepared to adapt commands for different distributions.
 
-### Challenge 2: Database Connection Timeouts
-
-**Issue:** Web servers experienced 504 Gateway Timeout errors when processing PHP requests, with Apache logs showing PHP-FPM timeout errors.
-
-**Solution:** I diagnosed this as a PHP-FPM configuration issue and implemented:
-```bash
-# Added to /etc/php-fpm.d/www.conf
-request_terminate_timeout = 300
-```
-
 I also verified security group rules allowed MySQL connections and restarted both PHP-FPM and Apache services.
 
 **Learning:** Timeout issues often indicate configuration problems rather than code issues. System logs are invaluable for diagnosing such problems.
@@ -219,10 +229,13 @@ I also verified security group rules allowed MySQL connections and restarted bot
 172.31.26.173:/mnt/apps /var/www nfs defaults 0 0
 172.31.26.173:/mnt/logs /var/log/httpd nfs defaults 0 0
 ```
+<img width="1366" height="768" alt="mounts" src="https://github.com/user-attachments/assets/30b1fd95-7ae1-4441-a11f-674118fac177" />
+<img width="1366" height="768" alt="verified mount -a" src="https://github.com/user-attachments/assets/d7241d11-1b49-4e51-8f69-1d763f53f243" />
+
 
 **Learning:** Persistent mounts require fstab configuration. Always test mount persistence by rebooting test systems.
 
-### Challenge 4: SELinux Security Restrictions
+### Challenge 2: SELinux Security Restrictions
 
 **Issue:** Apache couldn't serve files from NFS-mounted directories due to SELinux policies blocking network file access.
 
@@ -232,9 +245,9 @@ sudo setsebool -P httpd_execmem 1
 sudo setsebool -P httpd_use_nfs 1
 sudo setsebool -P httpd_can_network_connect 1
 ```
+<img width="1366" height="768" alt="configured databases connecteion vi" src="https://github.com/user-attachments/assets/1f48d6a2-e48d-459b-9a8f-68e1749cbbd0" />
 
 **Learning:** SELinux provides important security but requires explicit configuration for non-standard setups like NFS-mounted web content.
-
 
 
 ## Testing and Validation
@@ -250,6 +263,7 @@ sudo touch /var/www/test-from-server1.txt
 # Verified presence on webserver-02 and webserver-03
 ls -la /var/www/
 ```
+<img width="1366" height="768" alt="testfile-testing connectinon" src="https://github.com/user-attachments/assets/b0d03ba3-f574-4c5d-8577-fe32a21329df" />
 
 **Database Connectivity Testing:**
 I verified all web servers could connect to the database:
@@ -262,31 +276,16 @@ I accessed the tooling application from each web server's public IP and verified
 - Successful login with admin/admin credentials
 - Identical content served from all servers
 - Database operations worked consistently across all servers
+<img width="1366" height="768" alt="web3login page" src="https://github.com/user-attachments/assets/02380890-f9dd-4dd3-87e1-9fc7dc766f71" />
 
-**Load Balancing Readiness:**
-The identical configuration across all three servers confirmed the infrastructure is ready for load balancer implementation.
 
 ## Lessons Learned
-
-### Technical Insights
-
-**NFS Performance Considerations:** While NFS provides excellent file sharing capabilities, I learned it can become a bottleneck under high load. For production deployments, I would consider implementing caching strategies or content delivery networks for static assets.
-
-**Database Security Models:** Subnet-based MySQL access control provides good security while enabling necessary functionality. This approach is more secure than wildcard permissions but more flexible than host-specific restrictions.
-
-**Operating System Compatibility:** Version differences between documentation and implementation environments require careful adaptation. I learned to verify package availability and repository compatibility before beginning installations.
 
 ### Infrastructure Design
 
 **Stateless Architecture Benefits:** The stateless design significantly simplifies scaling operations. New web servers can be added without complex data synchronization, and failed servers can be replaced without data recovery concerns.
 
-**Single Points of Failure:** While the web tier is now highly available, both NFS and database servers represent single points of failure. Production implementations should include clustering or replication for these critical components.
-
 **Security Group Strategy:** Implementing network security through AWS security groups rather than host-based firewalls provides centralized, manageable security policies that are easier to audit and maintain.
-
-### DevOps Practices
-
-**Infrastructure as Code Readiness:** While this project used manual configuration for learning purposes, the systematic approach I developed can easily be translated into automation tools like Ansible or Terraform for production deployments.
 
 ## Conclusion
 
