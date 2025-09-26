@@ -277,7 +277,9 @@ I accessed the tooling application from each web server's public IP and verified
 - Identical content served from all servers
 - Database operations worked consistently across all servers
 <img width="1366" height="768" alt="web3login page" src="https://github.com/user-attachments/assets/02380890-f9dd-4dd3-87e1-9fc7dc766f71" />
+<img width="1366" height="768" alt="webserver2 login" src="https://github.com/user-attachments/assets/69352140-6267-4006-a3fe-f79ef6bffb6a" />
 
+<img width="1366" height="768" alt="web3logit" src="https://github.com/user-attachments/assets/f9ee6783-253c-4fe4-9817-d21709504376" />
 
 ## Lessons Learned
 
