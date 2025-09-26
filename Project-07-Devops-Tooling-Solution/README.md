@@ -63,6 +63,7 @@ I began by creating the foundational infrastructure in AWS, establishing five EC
 - 1 Database Server (RHEL 10): MySQL database hosting  
 - 3 Web Servers (RHEL 10): Application servers
 <img width="1366" height="768" alt="nfs server instance" src="https://github.com/user-attachments/assets/5c31dfe7-a177-4185-a1a5-f1e7848e8468" />
+<img width="1366" height="768" alt="db server created" src="https://github.com/user-attachments/assets/34ee639c-3e5e-4ce2-beb6-0cbeb0750054" />
 
 I configured security groups to control network access between tiers:
 - Web servers: HTTP (80) and SSH (22) access
