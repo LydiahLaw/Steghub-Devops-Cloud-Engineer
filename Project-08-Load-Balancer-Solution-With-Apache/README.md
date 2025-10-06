@@ -201,14 +201,12 @@ Open the Load Balancer's public IP in your browser.
 
 Refresh multiple times, and you should see the responses alternate between Web1 and Web2.
 
+Ensure Apache modules are enabled.
+
 ---
 <img width="1366" height="768" alt="testing loadbalancer on web1" src="https://github.com/user-attachments/assets/3326157d-b486-4e6f-91cd-24dabfc90b0c" />
 
 <img width="1366" height="768" alt="web2 texting load balancer" src="https://github.com/user-attachments/assets/17df6fc2-9e14-40ff-b11a-3f2a29eb0583" />
-
-
-
-Ensure Apache modules are enabled.
 
 ---
 
