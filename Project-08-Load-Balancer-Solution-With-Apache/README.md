@@ -1,19 +1,19 @@
 # Apache Load Balancer with Two Web Servers on AWS
 
 ## Table of Contents
-1. Introduction  
-2. Architecture  
-3. Prerequisites  
-4. Step 1: Launch EC2 Instances  
-5. Step 2: Configure Security Groups  
-6. Step 3: Set Up Web Servers  
-7. Step 4: Set Up Load Balancer Server  
-8. Step 5: Configure VirtualHost for Load Balancing  
-9. Step 6: Update /etc/hosts  
-10. Step 7: Test the Setup  
-11. Verification and Troubleshooting  
-12. Key Takeaways  
-13. Conclusion
+1. [Introduction](#1-introduction)
+2. [Architecture](#2-architecture)
+3. [Prerequisites](#3-prerequisites)
+4. [Step 1: Launch EC2 Instances](#4-step-1-launch-ec2-instances)
+5. [Step 2: Configure Security Groups](#5-step-2-configure-security-groups)
+6. [Step 3: Set Up Web Servers](#6-step-3-set-up-web-servers)
+7. [Step 4: Set Up Load Balancer Server](#7-step-4-set-up-load-balancer-server)
+8. [Step 5: Configure VirtualHost for Load Balancing](#8-step-5-configure-virtualhost-for-load-balancing)
+9. [Step 6: Update /etc/hosts](#9-step-6-update-etchosts)
+10. [Step 7: Test the Setup](#10-step-7-test-the-setup)
+11. [Verification and Troubleshooting](#11-verification-and-troubleshooting)
+12. [Key Takeaways](#12-key-takeaways)
+13. [Conclusion](#13-conclusion)
 
 ---
 
