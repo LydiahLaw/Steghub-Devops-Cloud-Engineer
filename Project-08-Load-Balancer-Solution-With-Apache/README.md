@@ -43,6 +43,7 @@ In this project, I set up a simple load balancing solution on AWS using Apache. 
   - Load Balancer  
 
 - Make sure they all have public IPs for initial SSH access.  
+<img width="1366" height="768" alt="instances created 1" src="https://github.com/user-attachments/assets/e02f0d1a-acfd-432e-a341-4262d65f70c2" />
 
 ---
 
@@ -58,6 +59,7 @@ I created and attached security groups as follows:
   - Inbound:  
     - HTTP (80) from `0.0.0.0/0`  
     - SSH (22) from **my local IP**  
+<img width="1366" height="768" alt="securitygroups created 2" src="https://github.com/user-attachments/assets/f36ca36f-727b-46bb-a411-98f86c93be37" />
 
 This setup ensures only the load balancer can talk to the backend servers on port 80.
 
@@ -70,6 +72,7 @@ On both **Web1** and **Web2**:
 sudo apt update -y
 sudo apt install apache2 -y
 ```
+<img width="1366" height="768" alt="web2 install apache" src="https://github.com/user-attachments/assets/f1ed32e4-fa7d-44b7-9789-87ab338971f3" />
 
 Edit the index page to make each server unique:
 
@@ -107,6 +110,7 @@ sudo a2enmod lbmethod_bytraffic
 sudo a2enmod headers
 sudo a2enmod slotmem_shm
 ```
+<img width="1366" height="768" alt="enable apache modules in loadbalancer 14" src="https://github.com/user-attachments/assets/1951c914-8c84-4bf0-9214-cf3dab14726a" />
 
 Then restart Apache:
 
@@ -144,6 +148,7 @@ Replace contents with:
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 ```
+<img width="1366" height="768" alt="loadbalancer configured 15" src="https://github.com/user-attachments/assets/cbc0af56-aed8-4ad2-9bfd-753aa958b68d" />
 
 Check for syntax errors:
 
@@ -174,6 +179,7 @@ Add:
 ```
 
 Save and exit.
+<img width="1366" height="768" alt="dns on loadbalancer 16" src="https://github.com/user-attachments/assets/18f84da2-2d96-4292-8764-b08c76284ac2" />
 
 Test connectivity:
 
@@ -183,6 +189,10 @@ curl http://Web2
 ```
 
 You should see the unique content from each backend.
+<img width="1366" height="768" alt="dns test curl 18" src="https://github.com/user-attachments/assets/2e909356-8f3a-4692-a4f3-ce7d8c129cee" />
+
+<img width="1366" height="768" alt="web1 login success" src="https://github.com/user-attachments/assets/8195d694-af76-4c3f-886f-ce8b3ec54ede" />
+
 
 ---
 
@@ -192,16 +202,11 @@ Open the Load Balancer's public IP in your browser.
 Refresh multiple times, and you should see the responses alternate between Web1 and Web2.
 
 ---
+<img width="1366" height="768" alt="testing loadbalancer on web1" src="https://github.com/user-attachments/assets/3326157d-b486-4e6f-91cd-24dabfc90b0c" />
 
-## 11. Verification and Troubleshooting
-Check Apache logs if traffic isn't balancing:
+<img width="1366" height="768" alt="web2 texting load balancer" src="https://github.com/user-attachments/assets/17df6fc2-9e14-40ff-b11a-3f2a29eb0583" />
 
-```bash
-tail -f /var/log/apache2/error.log
-tail -f /var/log/apache2/access.log
-```
 
-If one server doesn't respond, confirm its security group allows traffic from the Load Balancer's private IP.
 
 Ensure Apache modules are enabled.
 
