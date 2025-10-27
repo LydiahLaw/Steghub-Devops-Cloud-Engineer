@@ -1,4 +1,4 @@
-# DNS Record Types - Reference Guide
+# DNS Record Types 
 
 ## What is DNS?
 
