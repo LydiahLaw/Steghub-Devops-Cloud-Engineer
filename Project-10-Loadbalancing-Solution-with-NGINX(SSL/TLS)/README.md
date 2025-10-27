@@ -37,6 +37,7 @@ This project demonstrates how to configure Nginx as a load balancer to distribut
    Instance Type: t2.micro
    Key Pair: Select your existing key pair
    ```
+<img width="1366" height="768" alt="instances created" src="https://github.com/user-attachments/assets/0bc52c4c-c569-4cb3-8988-7aaabcb1c2b3" />
 
 3. **Network Settings - Create Security Group:**
    ```
@@ -47,12 +48,10 @@ This project demonstrates how to configure Nginx as a load balancer to distribut
    - Type: HTTP,  Port: 80,  Source: 0.0.0.0/0 (anywhere)
    - Type: HTTPS, Port: 443, Source: 0.0.0.0/0 (anywhere)
    ```
-
-4. **Storage:** Keep default (8 GB gp3)
-
-5. **Launch Instance**
-
-6. **Wait for instance to be in "Running" state**
+<img width="1366" height="768" alt="security groups" src="https://github.com/user-attachments/assets/0db0e172-fef1-4d1d-8d66-f5a8653ed142" />
+**Storage:** Keep default (8 GB gp3)
+**Launch Instance**
+**Wait for instance to be in "Running" state**
 
 ---
 
