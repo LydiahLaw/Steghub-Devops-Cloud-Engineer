@@ -1,4 +1,4 @@
-# Load Balancer Solution With Nginx and SSL/TLS - Complete README
+# Load Balancer Solution With Nginx and SSL/TLS 
 
 ## Project Overview
 This project demonstrates how to configure Nginx as a load balancer to distribute traffic across multiple web servers and secure the connection using SSL/TLS certificates from Let's Encrypt.
