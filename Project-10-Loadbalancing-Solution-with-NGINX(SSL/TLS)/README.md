@@ -89,7 +89,8 @@ Before proceeding, collect this information:
      sudo rm /var/www/html/index.html
      sudo systemctl restart httpd
      ```
-   
+   <img width="1366" height="768" alt="mountapps web1" src="https://github.com/user-attachments/assets/a2c2a3c7-43e2-4203-a93c-ce6d074734b0" />
+
    - Test in browser: `http://<web-server-public-ip>/`
    - You should see the tooling application login page
 
@@ -115,13 +116,13 @@ ssh -i /path/to/your-key.pem ubuntu@<nginx-lb-public-ip>
    172.31.x.x Web1
    172.31.y.y Web2
    ```
-
-3. **Save and exit:**
+**Save and exit:**
    - Press `Esc`
    - Type `:wq`
    - Press `Enter`
+<img width="1366" height="768" alt="nginx add web1 and 2" src="https://github.com/user-attachments/assets/978fd3d3-070b-440e-9ed3-a07f1973bb94" />
 
-4. **Test DNS resolution:**
+ **Test DNS resolution:**
    ```bash
    ping -c 2 Web1
    ping -c 2 Web2
@@ -142,6 +143,7 @@ sudo apt install nginx -y
 # Check Nginx status
 sudo systemctl status nginx
 ```
+<img width="1366" height="768" alt="nginx installed on nginx" src="https://github.com/user-attachments/assets/658a921e-ac42-4178-8139-e4a48c5ce7b0" />
 
 You should see "active (running)" in green.
 
@@ -246,6 +248,7 @@ http {
     }
 }
 ```
+<img width="1366" height="768" alt="added web weights on nginx conf" src="https://github.com/user-attachments/assets/03c5a10c-fc5a-4149-b585-95901e11434a" />
 
 4. **Save and exit:**
    - Press `Esc`
@@ -274,13 +277,6 @@ http {
 
 1. **Visit in browser:** `http://<nginx-lb-public-ip>/`
 2. You should see your **tooling application login page**
-3. **Refresh multiple times** - Nginx is distributing requests between Web1 and Web2
-
-**If you see Apache default page:**
-- Clear browser cache (Ctrl + Shift + R or Ctrl + F5)
-- Try incognito/private window
-- Check that index.html was removed from web servers
-
 ---
 
 ## Part 2: Domain Name and SSL/TLS Certificate
@@ -299,17 +295,12 @@ http {
    - **Resource type:** Instance
    - **Instance:** Select your Nginx-LB instance
    - Click **"Associate"**
+<img width="1366" height="768" alt="elastic ip allocated" src="https://github.com/user-attachments/assets/7288824d-0fa7-49b9-b1de-e07c0adb5e08" />
 
 3. **Update SSH connection** (use Elastic IP from now on):
    ```bash
    ssh -i /path/to/your-key.pem ubuntu@<your-elastic-ip>
    ```
-
-4. **Verify the Elastic IP:**
-   ```bash
-   curl http://checkip.amazonaws.com
-   ```
-   Should return your Elastic IP.
 
 ---
 
@@ -341,6 +332,7 @@ http {
    - Example: `mytoolbox.mooo.com`
 
 6. **Wait 2-5 minutes** for DNS propagation
+<img width="1366" height="768" alt="dom name registered" src="https://github.com/user-attachments/assets/67cff62e-0c7b-47d6-afe2-a6aeed6631c0" />
 
 ---
 
@@ -362,10 +354,7 @@ http {
    http://mytoolbox.mooo.com
    ```
    Should show your tooling application.
-
-**If connection refused:**
-- Check Security Group has port 80 open (0.0.0.0/0)
-- Verify Nginx is running: `sudo systemctl status nginx`
+<img width="1366" height="768" alt="dom name registered" src="https://github.com/user-attachments/assets/9ac59977-3cd2-4af8-a550-ed3a3747f4fe" />
 
 ---
 
@@ -391,13 +380,14 @@ http {
        }
    }
    ```
-   **Replace `mytoolbox.mooo.com` with your actual domain.**
+   **Replace `mytoolbox.mooo.com` (this is mine) with your actual domain.** 
 
 4. **Save, test, and restart:**
    ```bash
    sudo nginx -t
    sudo systemctl restart nginx
    ```
+<img width="1366" height="768" alt="update Nginx Configuration with Domain Name" src="https://github.com/user-attachments/assets/2ffcdcf4-b15a-4abf-8197-8794f8e3a239" />
 
 5. **Test:** `http://mytoolbox.mooo.com`
 
@@ -426,6 +416,7 @@ http {
    ```bash
    sudo ln -s /snap/bin/certbot /usr/bin/certbot
    ```
+<img width="1366" height="768" alt="snapd active" src="https://github.com/user-attachments/assets/fb732212-94c3-4d2e-aad1-4cc11c896ebd" />
 
 4. **Request SSL Certificate:**
    ```bash
@@ -441,6 +432,8 @@ http {
 
 6. **Wait for certificate to be issued** (takes 10-30 seconds)
 
+<img width="1366" height="768" alt="certbot installed" src="https://github.com/user-attachments/assets/ff8bbf84-169e-4553-9586-42c4578c6ec2" />
+
 ---
 
 ### Step 14: Test HTTPS Connection
@@ -452,6 +445,7 @@ http {
    - Click the padlock
    - View certificate details
    - Issued by: Let's Encrypt
+<img width="1366" height="768" alt="ssl working" src="https://github.com/user-attachments/assets/01347eab-0849-4f7d-820e-7e3bb1c34f5c" />
 
 3. **Test HTTP redirect:**
    - Visit: `http://mytoolbox.mooo.com`
@@ -475,8 +469,8 @@ http {
    ```bash
    crontab -e
    ```
-   
-   If prompted, select editor (choose nano or vim - nano is easier)
+   <img width="1366" height="768" alt="automatic cert renewal" src="https://github.com/user-attachments/assets/a414c0c8-5c8d-4806-aa5d-f3f4dbc51342" />
+
 
 3. **Add this line at the end:**
    ```
@@ -484,6 +478,7 @@ http {
    ```
    
    This runs renewal check twice daily (at midnight and noon).
+<img width="1366" height="768" alt="cronjob for automatic renewal" src="https://github.com/user-attachments/assets/5318d1f6-9bf2-4da1-a39c-1d4cfc627976" />
 
 4. **Save and exit:**
    - **If using nano:** Press `Ctrl+X`, then `Y`, then `Enter`
@@ -493,7 +488,8 @@ http {
    ```bash
    crontab -l
    ```
-   
+   <img width="1366" height="768" alt="crot jobs" src="https://github.com/user-attachments/assets/94134cdc-1d43-4a92-b739-edfae789b7e1" />
+
    Should display your renewal job.
 
 ---
@@ -528,14 +524,7 @@ http {
    sudo systemctl restart httpd
    ```
 2. Clear browser cache (Ctrl + Shift + R)
-3. Try incognito window
-
-### Issue: DNS Not Resolving
-
-**Solution:**
-1. Verify FreeDNS has correct Elastic IP
-2. Wait 5-10 minutes for DNS propagation
-3. Check: `nslookup your-domain.com`
+3. Try incognito window`
 
 ### Issue: Certbot Fails
 
@@ -544,13 +533,6 @@ http {
 2. Check nginx.conf has correct server_name
 3. Verify port 80 is accessible from internet
 4. Test: `curl http://your-domain.com`
-
-### Issue: Certificate Not Renewing
-
-**Solution:**
-1. Test renewal: `sudo certbot renew --dry-run`
-2. Check cronjob: `crontab -l`
-3. View renewal logs: `sudo tail -50 /var/log/letsencrypt/letsencrypt.log`
 
 ---
 
@@ -580,25 +562,6 @@ Web Server 1    Web Server 2
 
 ---
 
-## Important Notes
-
-1. **Let's Encrypt Certificates:**
-   - Valid for 90 days
-   - Auto-renewal configured for every 60 days
-   - Renewal happens twice daily via cronjob
-
-2. **Security Best Practices:**
-   - Web servers should only allow traffic from Load Balancer security group
-   - Keep software updated: `sudo apt update && sudo apt upgrade`
-   - Monitor logs regularly
-
-3. **Maintenance:**
-   - Check certificate status: `sudo certbot certificates`
-   - View Nginx logs: `sudo tail -f /var/log/nginx/access.log`
-   - Monitor load distribution across web servers
-
----
-
 ## Resources Used
 
 - **AWS Services:** EC2, Elastic IP, Security Groups
@@ -609,31 +572,6 @@ Web Server 1    Web Server 2
 
 ---
 
-## Project Completion
-
-Congratulations! You have successfully:
-- ✅ Configured Nginx as a Load Balancer
-- ✅ Distributed traffic across multiple web servers
-- ✅ Registered a domain name
-- ✅ Secured your website with SSL/TLS certificate
-- ✅ Automated certificate renewal
-- ✅ Implemented high availability architecture
-
-**Your tooling application is now accessible via:**
-- `https://mytoolbox.mooo.com` (secured with SSL)
-
----
-
-## Next Steps
-
-Consider implementing:
-- Health checks for web servers
-- Session persistence (sticky sessions)
-- Additional web servers for higher availability
-- CloudWatch monitoring
-- Automated backups
-- WAF (Web Application Firewall)
-
----
-
-**End of README**
+## Conclusion
+In this project, I set up Nginx as a load balancer for two Apache web servers hosting my tooling application. I configured EC2 instances with proper security, implemented weighted round-robin balancing, registered a custom domain, and secured traffic with a Let’s Encrypt SSL certificate. I automated certificate renewal to maintain continuous security. This setup made my application accessible at https://mytoolbox.mooo.com
+ with improved availability, secure communications, and the ability to scale horizontally, reflecting production-ready practices in load balancing, SSL/TLS, DNS management, and DevOps automation.
