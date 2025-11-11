@@ -42,8 +42,6 @@ This project automates server configuration management using Ansible. It demonst
 Developer → GitHub → Jenkins → Ansible → Target Servers
 ```
 
-[Screenshot: Architecture diagram]
-
 ---
 
 ## Prerequisites
@@ -73,13 +71,12 @@ Developer → GitHub → Jenkins → Ansible → Target Servers
 
 Renamed Jenkins EC2 instance to `Jenkins-Ansible`.
 
-[Screenshot: AWS EC2 console showing renamed instance]
+<img width="1366" height="768" alt="jenkins-ansible" src="https://github.com/user-attachments/assets/d137333c-f2b0-4405-be79-9ef3376cf2b6" />
+
 
 ### 1.2 Create GitHub Repository
 
 Created new repository: `ansible-config-mgt`
-
-[Screenshot: GitHub repository created]
 
 ### 1.3 Install Ansible
 
@@ -89,7 +86,8 @@ sudo apt install ansible -y
 ansible --version
 ```
 
-[Screenshot: Ansible version output]
+<img width="1115" height="742" alt="ansible install" src="https://github.com/user-attachments/assets/915f8c7c-1bbd-442d-8372-67c74531a5d9" />
+
 
 ### 1.4 Configure Jenkins Build Job
 
@@ -101,7 +99,8 @@ ansible --version
 - Build Triggers: GitHub hook trigger for GITScm polling
 - Post-build Actions: Archive artifacts (`**`)
 
-[Screenshot: Jenkins project configuration]
+<img width="1366" height="768" alt="build triggers" src="https://github.com/user-attachments/assets/04982bfe-9dd4-4db9-975c-c0acb7470698" />
+
 
 ### 1.5 Configure GitHub Webhook
 
@@ -109,7 +108,8 @@ ansible --version
 - Content type: `application/json`
 - Events: Just the push event
 
-[Screenshot: GitHub webhook configuration]
+<img width="1366" height="768" alt="add webhook" src="https://github.com/user-attachments/assets/17acb8e2-3143-4262-b635-fadd213722db" />
+
 
 ### 1.6 Test Setup
 
@@ -121,7 +121,7 @@ Modified README.md and verified:
 ls /var/lib/jenkins/jobs/ansible/builds/1/archive/
 ```
 
-[Screenshot: Jenkins build success and archived files]
+<img width="1366" height="768" alt="automatic build successful" src="https://github.com/user-attachments/assets/5d70eaa4-d4ce-48ff-9793-24afe2855eb6" />
 
 ---
 
@@ -130,8 +130,6 @@ ls /var/lib/jenkins/jobs/ansible/builds/1/archive/
 ### 2.1 Install Remote-SSH Extension
 
 Installed "Remote - SSH" extension in VSCode.
-
-[Screenshot: VSCode with Remote-SSH extension]
 
 ### 2.2 Configure SSH Connection
 
@@ -143,7 +141,8 @@ Host Jenkins-Ansible
     IdentityFile C:\path\to\tooling.pem
 ```
 
-[Screenshot: VSCode connected to remote server]
+<img width="1366" height="768" alt="jenkins config" src="https://github.com/user-attachments/assets/b24e5f9c-070e-4118-ab63-a8ca2c060af4" />
+
 
 ### 2.3 Clone Repository
 
@@ -152,8 +151,7 @@ cd ~
 git clone https://github.com/username/ansible-config-mgt.git
 cd ansible-config-mgt
 ```
-
-[Screenshot: Repository cloned]
+<img width="1366" height="768" alt="clone ansible" src="https://github.com/user-attachments/assets/c55d957e-7c3c-4813-863f-1f8145df1da3" />
 
 ---
 
@@ -162,10 +160,10 @@ cd ansible-config-mgt
 ### 3.1 Create Feature Branch
 
 ```bash
-git checkout -b feature/prj-ansible-setup
+git checkout -b feature/prj-11-ansible-setup
 ```
+<img width="1366" height="768" alt="feature branch" src="https://github.com/user-attachments/assets/f9ad2775-a9da-4884-a5cf-7e2c099f41f1" />
 
-[Screenshot: Git branch creation]
 
 ### 3.2 Create Directory Structure
 
@@ -181,8 +179,6 @@ ansible-config-mgt/
 │   └── prod.yml
 └── README.md
 ```
-
-[Screenshot: Directory structure in VSCode]
 
 ---
 
@@ -220,7 +216,8 @@ ssh -A ubuntu@<Jenkins-Ansible-Public-IP>
 172.31.23.171 ansible_ssh_user=ubuntu
 ```
 
-[Screenshot: inventory/dev.yml file]
+<img width="1366" height="768" alt="feature branch" src="https://github.com/user-attachments/assets/3422b1d0-39b5-4bb8-aa91-d3494fdd8683" />
+
 
 ---
 
@@ -252,7 +249,8 @@ ssh -A ubuntu@<Jenkins-Ansible-Public-IP>
         state: latest
 ```
 
-[Screenshot: common.yml playbook]
+<img width="1366" height="768" alt="feature branch" src="https://github.com/user-attachments/assets/9febccde-1502-40f0-a40f-1a0b4fa1a42e" />
+
 
 ---
 
@@ -264,22 +262,20 @@ ssh -A ubuntu@<Jenkins-Ansible-Public-IP>
 git status
 git add .
 git commit -m "Initial ansible configuration with inventory and playbook"
-git push origin feature/prj-ansible-setup
+git push origin feature/prj-11-ansible-setup
 ```
 
-[Screenshot: Git commit]
 
 ### 6.2 Create Pull Request
 
 Created PR with title: "Initial Ansible Setup - Inventory and Common Playbook"
+<img width="1366" height="768" alt="create pull request" src="https://github.com/user-attachments/assets/232ecdee-2060-4259-96ce-52a2083695f1" />
 
-[Screenshot: GitHub Pull Request]
 
 ### 6.3 Merge to Main Branch
 
 Reviewed and merged PR to main branch.
-
-[Screenshot: PR merged]
+<img width="1366" height="768" alt="merge pull req" src="https://github.com/user-attachments/assets/4668f3fb-583d-4b76-bdd9-76e91c9d477d" />
 
 ### 6.4 Pull Latest Changes
 
@@ -292,8 +288,7 @@ git pull origin main
 
 Jenkins automatically triggered build and archived artifacts.
 
-[Screenshot: Jenkins automatic build after merge]
-
+<img width="1366" height="768" alt="build from pull request" src="https://github.com/user-attachments/assets/046bdb62-0b4f-4c44-9a47-cf5f5499badf" />
 ---
 
 ## Step 7: Run First Ansible Test
@@ -314,18 +309,18 @@ host_key_checking = False
 ### 7.2 Test Connectivity
 
 ```bash
-ansible all -i inventory/dev.yml -m ping
+ansible all -i inventory/dev.ini -m ping
 ```
+<img width="1366" height="768" alt="inventory ping working" src="https://github.com/user-attachments/assets/4c785d75-fa31-4ecd-836b-81190d7efd91" />
 
-[Screenshot: Ansible ping test successful]
 
 ### 7.3 Run Playbook
 
 ```bash
 ansible-playbook -i inventory/dev.yml playbooks/common.yml
 ```
+<img width="1366" height="768" alt="run playbook" src="https://github.com/user-attachments/assets/229461a8-919f-4ae8-bf0b-360b255f6131" />
 
-[Screenshot: Playbook execution output]
 
 ### 7.4 Verify Installation
 
@@ -341,7 +336,7 @@ ssh ubuntu@172.31.23.171 "which wireshark"
 
 **Output:** `/usr/bin/wireshark` on all servers
 
-[Screenshot: Wireshark verification on all servers]
+<img width="1366" height="768" alt="which wireshrak" src="https://github.com/user-attachments/assets/376e2a2c-c98a-4f3f-b76d-553b271631b3" />
 
 ---
 
@@ -415,14 +410,18 @@ Added timezone configuration and directory creation:
       timezone:
         name: Africa/Nairobi
 ```
+<img width="1366" height="768" alt="updated the common yml" src="https://github.com/user-attachments/assets/cceba720-8086-4dc6-80a9-93680cab7f21" />
 
 **Verification:**
 ```bash
 ssh ec2-user@172.31.25.139 "timedatectl"
 ssh ec2-user@172.31.29.2 "ls -la /home/ec2-user/ansible_test/"
 ```
+<img width="1366" height="768" alt="ssh agent with time" src="https://github.com/user-attachments/assets/2f217f36-5cfb-4195-bf70-7d4e7a857723" />
 
-[Screenshot: Enhanced playbook execution and verification]
+
+<img width="1366" height="768" alt="time change successfull" src="https://github.com/user-attachments/assets/beedabb6-88de-43b8-9ffd-b9ddeafefd2e" />
+
 
 ---
 
@@ -446,12 +445,5 @@ Successfully implemented Ansible configuration management with the following ach
 - Git version control and collaboration
 - SSH agent forwarding for secure multi-hop connections
 - Linux system administration across RHEL and Ubuntu systems
-
-**Future Enhancements:**
-- Implement Ansible roles for better code organization
-- Add more environments (Staging, UAT, Production)
-- Create dynamic inventories
-- Implement Ansible Vault for secrets management
-- Add more complex automation tasks (application deployment, database configuration, etc.)
 
 This project establishes a robust foundation for infrastructure automation, enabling efficient management of server fleets of any size with minimal manual intervention.
