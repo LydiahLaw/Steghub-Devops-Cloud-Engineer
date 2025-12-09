@@ -43,6 +43,8 @@ Create a centralized location to store the latest code from every build:
 ```bash
 sudo mkdir /home/ubuntu/ansible-config-artifact
 ```
+<img width="1366" height="768" alt="create directory 1" src="https://github.com/user-attachments/assets/f1411914-ddaa-4d85-8123-f9c84b0910ea" />
+
 
 ### 1.2 Install Copy Artifact Plugin
 
