@@ -83,7 +83,7 @@ Create a new Jenkins job to automatically copy artifacts to the permanent locati
 
 * Click `Save`
 
-![Jenkins save_artifacts configuration](screenshots/jenkins-save-artifacts-config.png)
+<img width="1366" height="768" alt="build new item " src="https://github.com/user-attachments/assets/1437718f-e6ca-4560-8574-5148591e53b9" />
 
 ### 1.4 Update Existing ansible Job
 
@@ -112,7 +112,8 @@ Watch both Jenkins jobs execute automatically. Verify files appear in the artifa
 ls -la /home/ubuntu/ansible-config-artifact/
 ```
 
-![Jenkins jobs completed successfully](screenshots/jenkins-both-jobs-success.png)
+<img width="1366" height="768" alt="automaic jenkins build-artifacts" src="https://github.com/user-attachments/assets/dbc689c6-cc02-4169-a9f1-549afbb474d0" />
+
 
 ---
 
@@ -128,6 +129,8 @@ git checkout main
 git pull origin main
 git checkout -b refactor
 ```
+<img width="1366" height="768" alt="refactor branch(static assn)" src="https://github.com/user-attachments/assets/b8d6cd38-9667-40aa-a57e-110a8d004ae6" />
+
 
 ### 2.2 Create Directory Structure
 
@@ -144,6 +147,7 @@ If `common.yml` exists in the playbooks folder, move it:
 ```bash
 mv playbooks/common.yml static-assignments/
 ```
+<img width="1366" height="768" alt="Move common yml to static assignments" src="https://github.com/user-attachments/assets/d40051d2-8f3f-434a-b671-a003b8f44752" />
 
 If it doesn't exist, create it with basic configuration:
 
@@ -197,6 +201,7 @@ Add this content:
 - hosts: all
 - import_playbook: ../static-assignments/common.yml
 ```
+<img width="1366" height="768" alt="Move common yml to static assignments" src="https://github.com/user-attachments/assets/f9a6a572-4336-454c-852b-c9ea2b86f51a" />
 
 **Why?** `site.yml` acts as the master control file. Instead of running individual playbooks, we run site.yml which executes all imported playbooks.
 
@@ -237,6 +242,8 @@ Add this content:
       purge: yes
       autoclean: yes
 ```
+<img width="1366" height="768" alt="Move common yml to static assignments" src="https://github.com/user-attachments/assets/9c73ca1f-6f3e-4247-a1b5-33c0906df77e" />
+
 
 ### 2.6 Update site.yml to Use common-del.yml
 
@@ -263,6 +270,7 @@ git add .
 git commit -m "Refactor: Move common.yml to static-assignments and create site.yml"
 git push origin refactor
 ```
+<img width="1366" height="768" alt="push the changes of common-del" src="https://github.com/user-attachments/assets/abf1381b-bd77-4836-8430-b62aacdd890a" />
 
 Create a Pull Request on GitHub:
 * Go to your repository on GitHub
@@ -271,7 +279,7 @@ Create a Pull Request on GitHub:
 * Click `Create pull request`
 * Click `Merge pull request` → `Confirm merge`
 
-![GitHub Pull Request merged](screenshots/github-pr-merged.png)
+<img width="1366" height="768" alt="pull latest changes" src="https://github.com/user-attachments/assets/fce180fd-d042-4d81-8b8d-ea97521f3751" />
 
 Pull the merged changes back to your server:
 
@@ -282,7 +290,7 @@ git pull origin main
 
 Wait for Jenkins jobs to complete automatically.
 
-![Jenkins jobs after merge](screenshots/jenkins-after-merge.png)
+<img width="1366" height="768" alt="automaic jenkins build-artifacts" src="https://github.com/user-attachments/assets/63bf0eb4-5e97-4d93-90b6-c210625bad28" />
 
 ### 2.8 Run Ansible Playbook Against Dev Environment
 
@@ -290,7 +298,7 @@ Navigate to the artifact directory and run the playbook:
 
 ```bash
 cd /home/ubuntu/ansible-config-artifact/
-ansible-playbook -i inventory/dev.yml playbooks/site.yml
+ansible-playbook -i inventory/dev.ini playbooks/site.yml
 ```
 
 Verify Wireshark was removed from a server:
@@ -300,8 +308,7 @@ ssh ec2-user@<Your-Dev-Server-IP>
 wireshark --version  # Should show "command not found"
 exit
 ```
-
-![Ansible playbook execution output](screenshots/ansible-playbook-dev.png)
+<img width="1366" height="768" alt="wireshark delted" src="https://github.com/user-attachments/assets/bd22882a-0151-4647-bc5f-ed908944d2c3" />
 
 ---
 
@@ -319,16 +326,8 @@ Create two new RHEL 10 instances for UAT environment:
 * **Security group**: Allow SSH (22) from Jenkins-Ansible, HTTP (80) from anywhere
 * Note the **Private IP addresses**
 
-![UAT instances running in AWS](screenshots/uat-instances-aws.png)
+<img width="1366" height="768" alt="2 new instances uat" src="https://github.com/user-attachments/assets/386ee7cc-b461-4f81-8a5d-454af78e55cc" />
 
-### 3.2 Create New Branch for UAT Work
-
-```bash
-cd /home/ubuntu/ansible-config-mgt
-git checkout main
-git pull origin main
-git checkout -b uat-webservers
-```
 
 ### 3.3 Create Webserver Role Structure
 
@@ -341,6 +340,7 @@ ansible-galaxy init webserver
 cd webserver
 rm -rf tests files vars
 ```
+<img width="1366" height="768" alt="ansible-galaxy" src="https://github.com/user-attachments/assets/30848e11-39a8-4c6e-ace0-ca43e7eaf961" />
 
 This creates the following structure:
 ```
@@ -356,6 +356,7 @@ webserver/
 │   └── main.yml
 └── templates/
 ```
+<img width="1366" height="768" alt="ansible-galaxy" src="https://github.com/user-attachments/assets/0d9b8115-1a8c-490a-a947-7be2ebda815b" />
 
 ### 3.4 Update UAT Inventory
 
@@ -373,6 +374,8 @@ Replace with your actual Private IPs:
 <Web1-UAT-Private-IP> ansible_ssh_user=ec2-user
 <Web2-UAT-Private-IP> ansible_ssh_user=ec2-user
 ```
+<img width="1366" height="768" alt="ansible-galaxy" src="https://github.com/user-attachments/assets/0aa91a1d-bee4-4bb7-b63c-8168f6493cf3" />
+
 
 ### 3.5 Configure SSH Agent
 
@@ -388,6 +391,7 @@ Verify the key was added:
 ```bash
 ssh-add -l
 ```
+<img width="1366" height="768" alt="ansible-galaxy" src="https://github.com/user-attachments/assets/47a59f35-0189-433f-81d8-bcc586e2f5c6" />
 
 ### 3.6 Configure Ansible roles_path
 
@@ -453,9 +457,9 @@ Add this content to install Apache and deploy the tooling website:
     state: absent
 ```
 
-**Note**: First fork the tooling repository from `https://github.com/darey-io/tooling` to your GitHub account.
+**Note**: First fork the tooling repository from `https://github.com/username/tooling` to your GitHub account.
+<img width="1366" height="768" alt="update main yml" src="https://github.com/user-attachments/assets/6cdf06bd-09b1-4447-8fcb-0735a5921f9d" />
 
-![Forked tooling repository](screenshots/tooling-repo-forked.png)
 
 ### 3.8 Create uat-webservers.yml Static Assignment
 
@@ -493,7 +497,7 @@ Update to:
 - import_playbook: ../static-assignments/uat-webservers.yml
 ```
 
-![Final directory structure](screenshots/final-directory-structure.png)
+<img width="1366" height="768" alt="update site yml" src="https://github.com/user-attachments/assets/b5f783dc-ec17-497d-9701-8b9c895a4c24" />
 
 ---
 
@@ -513,6 +517,8 @@ git push origin uat-webservers
 * Click `Compare & pull request`
 * Add descriptive title and comments
 * Click `Create pull request` → `Merge pull request` → `Confirm merge`
+* 
+<img width="1366" height="768" alt="github compare and pull" src="https://github.com/user-attachments/assets/3d6a8d23-e28d-4169-89b4-9e75c5f7d0dd" />
 
 ### 4.3 Pull Changes to Server
 
@@ -524,7 +530,7 @@ git pull origin main
 
 Wait for Jenkins jobs to complete.
 
-![Jenkins jobs completed](screenshots/jenkins-uat-jobs-complete.png)
+<img width="1366" height="768" alt="jenkinsjob triggered again" src="https://github.com/user-attachments/assets/8a98336e-53cc-43b4-b695-8831ba53567b" />
 
 ### 4.4 Test SSH Connectivity
 
@@ -535,6 +541,7 @@ ssh -i ~/.ssh/your-key-name.pem ec2-user@<Web1-UAT-Private-IP>
 ```
 
 Type `exit` to disconnect. Repeat for Web2-UAT.
+<img width="1366" height="768" alt="web1 connected" src="https://github.com/user-attachments/assets/73153dcb-a927-4617-9aeb-9ffaf1a17de7" />
 
 ### 4.5 Run Ansible Playbook
 
@@ -560,7 +567,7 @@ PLAY RECAP *****************************************************
 <Web2-UAT-IP>    : ok=6    changed=5    unreachable=0    failed=0
 ```
 
-![Ansible playbook execution successful](screenshots/ansible-playbook-uat-success.png)
+<img width="1366" height="768" alt="run playbook for uatservers" src="https://github.com/user-attachments/assets/d933f7b9-c9f5-4b30-83f1-95ab74c7f3f4" />
 
 ### 4.6 Verify Website is Live
 
@@ -574,9 +581,9 @@ http://<Web2-UAT-Public-IP>/index.php
 
 You should see the tooling website running on both servers!
 
-![Tooling website on Web1-UAT](screenshots/web1-uat-browser.png)
+<img width="1366" height="768" alt="web1 connected (2)" src="https://github.com/user-attachments/assets/77bd111f-5be9-4ec3-83c4-d5bb1d2d84fe" />
 
-![Tooling website on Web2-UAT](screenshots/web2-uat-browser.png)
+<img width="1366" height="768" alt="web2 connected tooling" src="https://github.com/user-attachments/assets/961eac46-4a2a-4140-88bf-04e96f0697f4" />
 
 ### 4.7 Verify Apache Service
 
@@ -589,7 +596,7 @@ ls -la /var/www/html/
 exit
 ```
 
-![Apache status showing active](screenshots/apache-status-active.png)
+<img width="1366" height="768" alt="httpd server enabled" src="https://github.com/user-attachments/assets/61798b9f-dac7-4c2f-accb-3147c2910185" />
 
 ---
 
@@ -610,27 +617,8 @@ sudo chmod -R 755 /home/ubuntu/ansible-config-artifact
 
 **Result**: Jenkins can now successfully copy artifacts to the directory.
 
-![Jenkins error before fix](screenshots/jenkins-permission-error.png)
+<img width="1366" height="768" alt="verifying artifacts were copied" src="https://github.com/user-attachments/assets/e75e0f00-0f42-4302-9998-8d36865ea60a" />
 
-![Jenkins success after fix](screenshots/jenkins-permission-fixed.png)
-
-### Blocker 2: SSH Connection Issues to UAT Servers
-
-**Problem**: Ansible couldn't connect to UAT servers initially.
-
-**Root Cause**: Security groups weren't configured to allow SSH from Jenkins-Ansible server, and ssh-agent wasn't properly configured with the private key.
-
-**Solution**:
-1. Updated UAT security groups to allow SSH (port 22) from Jenkins-Ansible security group
-2. Configured ssh-agent with private key:
-   ```bash
-   eval `ssh-agent -s`
-   ssh-add ~/.ssh/your-key-name.pem
-   ```
-
-**Result**: Ansible successfully connects to and configures UAT servers.
-
----
 
 ## Conclusion
 
@@ -645,44 +633,3 @@ This project successfully transformed a single-file Ansible configuration into a
 ✅ **Automation**: Complete CI/CD pipeline from GitHub push to server configuration
 
 ✅ **Scalability**: Easy to add new roles, playbooks, and environments without disrupting existing code
-
-**Final Architecture:**
-```
-site.yml (main entry point)
-    ├── imports common.yml (general tasks)
-    └── imports uat-webservers.yml
-            └── uses webserver role (Apache + tooling deployment)
-```
-
-The refactored code is now maintainable, readable, and follows DevOps best practices. Team members can easily understand the structure, add new features, and confidently deploy to multiple environments.
-
----
-
-## Project Structure
-
-```
-ansible-config-mgt/
-├── inventory/
-│   ├── dev.yml
-│   ├── staging.yml
-│   ├── uat.yml
-│   └── prod.yml
-├── playbooks/
-│   └── site.yml
-├── roles/
-│   └── webserver/
-│       ├── tasks/
-│       │   └── main.yml
-│       ├── handlers/
-│       │   └── main.yml
-│       ├── defaults/
-│       │   └── main.yml
-│       ├── meta/
-│       │   └── main.yml
-│       └── templates/
-├── static-assignments/
-│   ├── common.yml
-│   ├── common-del.yml
-│   └── uat-webservers.yml
-└── README.md
-```
