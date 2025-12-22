@@ -3,10 +3,7 @@
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [Understanding Key Concepts](#understanding-key-concepts)
-  - [Static vs Dynamic Assignments](#static-vs-dynamic-assignments)
-  - [Why Use Community Roles?](#why-use-community-roles)
 - [Prerequisites](#prerequisites)
-- [Project Architecture](#project-architecture)
 - [Implementation Steps](#implementation-steps)
   - [Step 1: Prepare Your Environment](#step-1-prepare-your-environment)
   - [Step 2: Create Dynamic Assignments Structure](#step-2-create-dynamic-assignments-structure)
@@ -102,7 +99,7 @@ git checkout -b dynamic-assignments
 
 This creates an isolated branch for development without affecting the main codebase.
 
-https://github.com/LydiahLaw/Steghub-Devops-Cloud-Engineer/blob/main/Project-13-Ansible-Dynamic-Assignments-Community-Roles/screenshots/dynamic%20ass%20new%20checkout%20brnach.png
+![Dynamic assignment checkout branch](Project-13-Ansible-Dynamic-Assignments-Community-Roles/screenshots/dynamic%20ass%20new%20checkout%20brnach.png)
 
 
 **2.2 Create Directory Structure**
@@ -121,7 +118,7 @@ touch env-vars/stage.yml
 touch env-vars/uat.yml
 touch env-vars/prod.yml
 ```
-https://github.com/LydiahLaw/Steghub-Devops-Cloud-Engineer/blob/main/Project-13-Ansible-Dynamic-Assignments-Community-Roles/screenshots/env%20vars%20files%20created.png
+<img width="1366" height="768" alt="env vars files created" src="https://github.com/user-attachments/assets/ba1eff0b-8966-4e3e-b119-3059bd3d9eb9" />
 
 **2.3 Configure Dynamic Variable Loader**
 
