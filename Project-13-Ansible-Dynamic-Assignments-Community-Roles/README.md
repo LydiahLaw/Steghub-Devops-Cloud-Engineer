@@ -34,33 +34,7 @@ This project builds upon previous Ansible configurations by introducing **dynami
 
 ---
 
-## Understanding Key Concepts
 
-### Static vs Dynamic Assignments
-
-**Static Assignments (`import`):**
-- All statements are pre-processed at **parse time** (when Ansible reads the playbook)
-- Changes made during execution are **not** considered
-- More reliable and easier to debug
-- Best for: Playbooks with stable, unchanging configurations
-
-**Dynamic Assignments (`include`):**
-- Statements are processed during **execution time**
-- Changes encountered during execution **are** applied
-- More flexible but harder to debug
-- Best for: Environment-specific variables that change frequently
-
-**Analogy:**
-- **Static** = A printed book (fixed content)
-- **Dynamic** = A tablet displaying content based on your selections (flexible content)
-
-### Why Use Community Roles?
-
-Instead of writing complex configurations from scratch (e.g., 100+ lines for MySQL setup), we leverage:
-- **Battle-tested** roles maintained by the community
-- **Multi-distribution** support (Ubuntu, CentOS, RHEL, etc.)
-- **Production-ready** code with best practices
-- **Time-saving** - focus on business logic, not infrastructure boilerplate
 
 ---
 
@@ -79,37 +53,6 @@ Before starting, ensure you have:
 - [x] Basic knowledge of Ansible playbooks and roles
 
 ---
-
-## Project Architecture
-
-```
-ansible-config-mgt/
-├── dynamic-assignments/
-│   └── env-vars.yml              # Dynamic variable loader
-├── env-vars/
-│   ├── dev.yml                   # Development variables
-│   ├── stage.yml                 # Staging variables
-│   ├── uat.yml                   # UAT variables
-│   └── prod.yml                  # Production variables
-├── inventory/
-│   ├── dev                       # Development inventory
-│   ├── stage                     # Staging inventory
-│   ├── uat                       # UAT inventory
-│   └── prod                      # Production inventory
-├── playbooks/
-│   └── site.yml                  # Main playbook orchestrator
-├── roles/
-│   ├── mysql/                    # MySQL community role
-│   ├── nginx/                    # Nginx load balancer role
-│   ├── apache/                   # Apache load balancer role
-│   └── webserver/                # Custom webserver role
-├── static-assignments/
-│   ├── common.yml                # Common configurations
-│   ├── webservers.yml            # Webserver configurations
-│   └── loadbalancers.yml         # Load balancer configurations
-├── ansible.cfg                   # Ansible configuration
-└── README.md                     # Project documentation
-```
 
 ---
 
@@ -142,8 +85,6 @@ Verify the key was added:
 ssh-add -l
 ```
 
-**Screenshot:** *SSH agent confirmation showing key fingerprint*
-
 ---
 
 ### Step 2: Create Dynamic Assignments Structure
@@ -161,6 +102,9 @@ git checkout -b dynamic-assignments
 
 This creates an isolated branch for development without affecting the main codebase.
 
+https://github.com/LydiahLaw/Steghub-Devops-Cloud-Engineer/blob/main/Project-13-Ansible-Dynamic-Assignments-Community-Roles/screenshots/dynamic%20ass%20new%20checkout%20brnach.png
+
+
 **2.2 Create Directory Structure**
 
 ```bash
@@ -177,6 +121,7 @@ touch env-vars/stage.yml
 touch env-vars/uat.yml
 touch env-vars/prod.yml
 ```
+https://github.com/LydiahLaw/Steghub-Devops-Cloud-Engineer/blob/main/Project-13-Ansible-Dynamic-Assignments-Community-Roles/screenshots/env%20vars%20files%20created.png
 
 **2.3 Configure Dynamic Variable Loader**
 
@@ -213,8 +158,8 @@ Add the following content:
 - `{{ playbook_dir }}`: Special variable that resolves to the playbook's directory
 - `tags: always`: Ensures this task runs regardless of tag filtering
 
-**Screenshot:** *env-vars.yml file content*
-
+[**Screenshot:** *env-vars.yml file content*
+](https://github.com/LydiahLaw/Steghub-Devops-Cloud-Engineer/blob/main/Project-13-Ansible-Dynamic-Assignments-Community-Roles/screenshots/dynamic-assignmentsenv-varsyml.png)
 ---
 
 ### Step 3: Configure Environment Variables
@@ -697,58 +642,15 @@ roles_path = /home/ubuntu/ansible-config-mgt/roles
 
 ## Conclusion
 
-In this project, we successfully implemented a sophisticated Ansible configuration management system with the following achievements:
-
-### Key Accomplishments
-
-✅ **Dynamic Variable Management**
-- Implemented environment-specific variable loading using `include` module
-- Created separate configuration files for Dev, Staging, UAT, and Production
-- Enabled flexible infrastructure configuration without code duplication
-
-✅ **Community Role Integration**
-- Leveraged production-ready MySQL role from Ansible Galaxy
-- Integrated Nginx and Apache load balancer roles
-- Reduced development time by using battle-tested, community-maintained code
-
-✅ **Conditional Infrastructure Deployment**
-- Implemented smart role execution using `when` conditions
-- Enabled seamless switching between Nginx and Apache load balancers
-- Created environment-aware playbooks that adapt to specific needs
-
-✅ **Infrastructure as Code Best Practices**
-- Maintained version control for all configuration files
-- Implemented proper Git workflow with feature branches and pull requests
-- Created reusable, maintainable Ansible code structure
-
-### Skills Developed
-
-- Advanced Ansible concepts (dynamic assignments, conditional execution)
-- Role management and Ansible Galaxy usage
-- Multi-environment infrastructure orchestration
-- Infrastructure as Code (IaC) principles
-- Git workflow for infrastructure changes
-
-### Real-World Applications
-
-This setup enables:
-- **Rapid environment provisioning** - Deploy entire environments with a single command
-- **Consistent configurations** - Same codebase manages all environments
-- **Easy maintenance** - Update configurations in one place, deploy everywhere
-- **Reduced human error** - Automated deployments eliminate manual mistakes
-- **Scalability** - Add new environments or servers without rewriting code
-
-### Next Steps
-
-To further enhance this infrastructure:
-1. Implement Ansible Vault for sensitive data encryption
-2. Add automated testing with Molecule
-3. Integrate with CI/CD pipeline for automatic deployments
-4. Implement role versioning and dependency management
-5. Add monitoring and alerting role configurations
+In this project, we successfully implemented dynamic variable management using Ansible's `include` module, allowing environment-specific configurations without code duplication. By leveraging community roles from Ansible Galaxy for MySQL, Nginx, and Apache, we significantly reduced development time while maintaining production-ready standards. The implementation of conditional role execution enables seamless switching between load balancers based on environment variables, demonstrating Infrastructure as Code best practices. This flexible, maintainable setup can now efficiently manage multiple environments (Dev, Staging, UAT, Production) from a single codebase, making infrastructure provisioning faster, more consistent, and scalable for real-world applications.
 
 ---
 
-**Project Completed Successfully!** ���
+# Ansible Dynamic Assignments (Include) and Community Roles
 
-You now have a production-ready, flexible Ansible infrastructure that can manage multiple environments efficiently and reliably.
+> **Note:** This project is part of the **StegHub DevOps/Cloud Engineering Bootcamp**.
+
+## Project Repository
+
+All project files and configurations are available in the GitHub repository:  
+🔗 **[https://github.com/LydiahLaw/Ansible-config-mgt](https://github.com/LydiahLaw/Ansible-config-mgt)**
