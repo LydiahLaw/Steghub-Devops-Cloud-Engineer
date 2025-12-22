@@ -2,7 +2,6 @@
 
 ## Table of Contents
 - [Project Overview](#project-overview)
-- [Understanding Key Concepts](#understanding-key-concepts)
 - [Prerequisites](#prerequisites)
 - [Implementation Steps](#implementation-steps)
   - [Step 1: Prepare Your Environment](#step-1-prepare-your-environment)
