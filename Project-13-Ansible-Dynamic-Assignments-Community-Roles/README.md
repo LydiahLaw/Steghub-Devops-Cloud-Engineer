@@ -30,11 +30,6 @@ This project builds upon previous Ansible configurations by introducing **dynami
 - Manage multi-environment infrastructure efficiently
 
 ---
-
-
-
----
-
 ## Prerequisites
 
 Before starting, ensure you have:
@@ -48,8 +43,6 @@ Before starting, ensure you have:
 - [x] GitHub repository: `ansible-config-mgt`
 - [x] SSH access configured to all target servers
 - [x] Basic knowledge of Ansible playbooks and roles
-
----
 
 ---
 
@@ -82,7 +75,6 @@ Verify the key was added:
 ssh-add -l
 ```
 
----
 
 ### Step 2: Create Dynamic Assignments Structure
 
@@ -99,7 +91,7 @@ git checkout -b dynamic-assignments
 
 This creates an isolated branch for development without affecting the main codebase.
 
-![Dynamic assignment checkout branch](Project-13-Ansible-Dynamic-Assignments-Community-Roles/screenshots/dynamic%20ass%20new%20checkout%20brnach.png)
+<img width="1366" height="768" alt="dynamic ass new checkout brnach" src="https://github.com/user-attachments/assets/e15a8ecc-1884-41ff-97c9-1f72bfab8f6b" />
 
 
 **2.2 Create Directory Structure**
@@ -155,8 +147,8 @@ Add the following content:
 - `{{ playbook_dir }}`: Special variable that resolves to the playbook's directory
 - `tags: always`: Ensures this task runs regardless of tag filtering
 
-[**Screenshot:** *env-vars.yml file content*
-](https://github.com/LydiahLaw/Steghub-Devops-Cloud-Engineer/blob/main/Project-13-Ansible-Dynamic-Assignments-Community-Roles/screenshots/dynamic-assignmentsenv-varsyml.png)
+<img width="1366" height="768" alt="dynamic-assignmentsenv-varsyml" src="https://github.com/user-attachments/assets/e36a5181-eba2-4cb4-94a0-24df53a63f95" />
+
 ---
 
 ### Step 3: Configure Environment Variables
@@ -188,10 +180,7 @@ environment: uat
 - Marks load balancer as required for this environment
 - Sets environment identifier for logging/tracking
 
-**Screenshot:** *uat.yml configuration*
-
-Repeat similar configurations for `dev.yml`, `stage.yml`, and `prod.yml` with environment-specific values.
-
+<img width="1366" height="768" alt="edit envvaruatyml" src="https://github.com/user-attachments/assets/f1fd506f-9a8c-4b3f-910a-eebcf5d0ea26" />
 ---
 
 ### Step 4: Install MySQL Community Role
@@ -226,6 +215,8 @@ mv geerlingguy.mysql mysql
 ```
 
 We rename it to `mysql` for cleaner, more intuitive references in our playbooks.
+
+<img width="1366" height="768" alt="installgeerlingguysql" src="https://github.com/user-attachments/assets/296dfd16-8e04-43f3-8ee0-dba6ed306a5b" />
 
 **4.4 Review Role Documentation**
 
@@ -270,7 +261,7 @@ mysql_users:
 - `mysql_users`: Application users with specific permissions
 - `host: "172.31.%"`: Allows connections from any IP in the 172.31.x.x subnet (your VPC)
 
-**Screenshot:** *MySQL role configuration*
+<img width="1366" height="768" alt="MySQL role configuration" src="https://github.com/user-attachments/assets/ef72a313-cd8d-456c-b0e4-231a60d65cba" />
 
 ---
 
@@ -304,6 +295,7 @@ Add at the top of the file:
 enable_nginx_lb: false
 load_balancer_is_required: false
 ```
+<img width="1366" height="768" alt="MySQL role configuration" src="https://github.com/user-attachments/assets/1ffbc6d4-92ee-47d3-a166-3a43efd91edb" />
 
 **5.4 Configure Apache Role Defaults**
 
@@ -324,7 +316,7 @@ load_balancer_is_required: false
 - Prevents accidental deployment of both load balancers
 - Allows environment-specific override via `env-vars/` files
 
-**Screenshot:** *Load balancer role defaults*
+<img width="1366" height="768" alt="edit apacheyml" src="https://github.com/user-attachments/assets/4976d07d-5739-40e3-83dd-4dd87692cf5a" />
 
 ---
 
@@ -356,7 +348,7 @@ Add conditional role execution:
 
 This prevents both load balancers from running simultaneously.
 
-**Screenshot:** *loadbalancers.yml content*
+<img width="1366" height="768" alt="addloadbalancerstositeyml" src="https://github.com/user-attachments/assets/2e5cd20c-406b-4ad7-8180-10fe4b6e79fa" />
 
 ---
 
@@ -417,7 +409,7 @@ Replace with:
 3. **Third play**: Configures web servers with application code
 4. **Fourth play**: Sets up load balancer (only if required by environment)
 
-**Screenshot:** *Complete site.yml playbook*
+<img width="1366" height="768" alt="updating my siteyml" src="https://github.com/user-attachments/assets/f6b31ce7-068c-4dbd-bde7-74e5ba46e79c" />
 
 ---
 
@@ -452,7 +444,7 @@ Add your UAT server details (using private IPs if running from same VPC):
 
 **Important:** Use **private IPs** when running Ansible from a server in the same VPC (faster, more secure).
 
-**Screenshot:** *UAT inventory file*
+<img width="1366" height="768" alt="uatinventory" src="https://github.com/user-attachments/assets/549ae158-23d2-43d4-ab44-008b6403673b" />
 
 **8.2 Commit Changes to GitHub**
 
@@ -472,7 +464,7 @@ git push --set-upstream origin dynamic-assignments
 5. Add description: "Implements dynamic assignments and community roles"
 6. Merge pull request to `main` branch
 
-**Screenshot:** *GitHub Pull Request*
+<img width="1366" height="768" alt="rolesfeature pullrequest" src="https://github.com/user-attachments/assets/5109875c-ccc9-4728-a584-69fd9b71ec9f" />
 
 **8.4 Pull Latest Changes**
 
@@ -494,6 +486,7 @@ ansible all -i inventory/uat -m ping
 ```
 
 **Expected Output:**
+
 ```
 172.31.79.75 | SUCCESS => {
     "changed": false,
@@ -504,21 +497,11 @@ ansible all -i inventory/uat -m ping
     "ping": "pong"
 }
 ...
+<img width="1366" height="768" alt="pingsunccessfull" src="https://github.com/user-attachments/assets/d47bb3fd-3801-41e5-b0ea-f5b3e0634fcc" />
+
 ```
 
-**Screenshot:** *Successful ping test*
-
-**Step 2: Run Playbook in Check Mode**
-
-Test without making changes (dry-run):
-
-```bash
-ansible-playbook -i inventory/uat playbooks/site.yml --check
-```
-
-This shows what *would* change without actually applying changes.
-
-**Step 3: Execute Full Deployment**
+**Step 2: Execute Full Deployment**
 
 ```bash
 ansible-playbook -i inventory/uat playbooks/site.yml
@@ -531,27 +514,14 @@ ansible-playbook -i inventory/uat playbooks/site.yml
 4. Configures web servers with application
 5. Installs and configures Nginx load balancer (since `enable_nginx_lb: true`)
 
-**Screenshot:** *Playbook execution output*
+<img width="1366" height="768" alt="playbook run successful3" src="https://github.com/user-attachments/assets/162df670-14fc-41c0-9127-9acb448d1243" />
 
-**Step 4: Verify Nginx Load Balancer**
+**Step 3: Verify Nginx Load Balancer**
 
-SSH into the load balancer server:
+<img width="1366" height="768" alt="playbook run successful3" src="https://github.com/user-attachments/assets/526e5c29-ef07-478e-b58e-d6e11c5fbf24" />
 
-```bash
-ssh -i ~/.ssh/tooling.pem ubuntu@172.31.23.171
-```
 
-Check Nginx status:
-
-```bash
-sudo systemctl status nginx
-```
-
-**Expected:** Service should be active (running)
-
-**Screenshot:** *Nginx service status*
-
-**Step 5: Test Load Balancer Switching**
+**Step 4: Test Load Balancer Switching**
 
 To switch from Nginx to Apache, edit the UAT variables:
 
@@ -578,9 +548,109 @@ Ansible will:
 2. Install and configure Apache
 3. Start Apache service
 
-**Screenshot:** *Apache installation output*
+<img width="1366" height="768" alt="apache working" src="https://github.com/user-attachments/assets/8ac5dd00-fd21-4c4e-9ecc-a8562af04c75" />
 
 ---
+
+## Additional Verification Commands
+
+After successful deployment, use these commands to verify your infrastructure is working correctly:
+
+### Verify Web Server Service Status
+
+Check if Apache/httpd is running on web servers:
+```bash
+ansible webservers -i inventory/uat -m shell -a "systemctl status httpd"
+```
+
+**What this does:**
+- Targets the `webservers` group in your inventory
+- Executes `systemctl status httpd` on each server
+- Returns the current status of the Apache service
+
+<img width="1366" height="768" alt="httpd" src="https://github.com/user-attachments/assets/627453f5-e234-4e4f-b867-7e0560be5467" />
+
+---
+
+### Verify Apache Processes
+
+Check running Apache processes on web servers:
+```bash
+ansible webservers -i inventory/uat -m shell -a "ps aux | grep httpd"
+```
+
+**What this does:**
+- Lists all running processes and filters for httpd
+- Confirms Apache is actively running in memory
+- Shows parent and child worker processes
+
+<img width="1366" height="768" alt="apache healthy" src="https://github.com/user-attachments/assets/48d696e3-535f-4172-890a-8824d2faf85e" />
+
+---
+
+### Verify Server Hostnames
+
+Retrieve hostname information using Ansible facts:
+```bash
+ansible webservers -i inventory/uat -m setup -a "filter=ansible_hostname"
+```
+
+**Expected Output:**
+```
+172.31.79.75 | SUCCESS => {
+    "ansible_facts": {
+        "ansible_hostname": "ip-172-31-79-75",
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false
+}
+172.31.66.68 | SUCCESS => {
+    "ansible_facts": {
+        "ansible_hostname": "ip-172-31-66-68",
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false
+}
+```
+
+**What this confirms:**
+- Ansible can gather facts from each server successfully
+- Python interpreter is properly configured
+- Server hostnames are correctly identified
+- **"SUCCESS"** status indicates proper server configuration
+
+<img width="1366" height="768" alt="serverhostnames" src="https://github.com/user-attachments/assets/d39d70bf-32ae-4b24-b71c-a4b92eff2a01" />
+
+---
+
+### Debug Environment Variables
+
+Test variable loading from environment files:
+```bash
+ansible webservers -i inventory/uat -m debug -a "var=env_name"
+```
+
+**Expected Output:**
+```
+172.31.79.75 | SUCCESS => {
+    "env_name": "VARIABLE IS NOT DEFINED!"
+}
+172.31.66.68 | SUCCESS => {
+    "env_name": "VARIABLE IS NOT DEFINED!"
+}
+```
+
+**Output Interpretation:**
+- **"SUCCESS"** = Command executed successfully, Ansible connected properly
+- **"VARIABLE IS NOT DEFINED!"** = The variable `env_name` wasn't set in `env-vars/uat.yml` (this is expected if you didn't define it)
+- The important part is the **"SUCCESS"** status, confirming proper communication
+
+<img width="1366" height="768" alt="testvariablessuccess" src="https://github.com/user-attachments/assets/e99c175c-d951-49e8-9cb2-6b463ec1a774" />
+
+---
+
+---
+
 
 ## Troubleshooting
 
@@ -601,49 +671,11 @@ Ansible will:
 
 ---
 
-### Issue: "Unable to retrieve file contents - webservers.yml"
-
-**Problem:** File doesn't exist or has wrong name
-
-**Solution:** Check existing files and rename:
-```bash
-ls static-assignments/
-mv uat-webservers.yml webservers.yml
-```
-
----
-
-### Issue: "Role 'webserver' was not found"
-
-**Problem:** Ansible can't locate the roles directory
-
-**Solution:** Update `ansible.cfg`:
-```ini
-[defaults]
-roles_path = /home/ubuntu/ansible-config-mgt/roles
-```
-
----
-
-### Issue: Connection timeout to target servers
-
-**Problem:** SSH connectivity issues
-
-**Solution:**
-1. Verify instances are running in AWS Console
-2. Check security groups allow SSH (port 22) from Jenkins-Ansible server
-3. Test manual SSH: `ssh -i ~/.ssh/tooling.pem ec2-user@172.31.x.x`
-4. Verify SSH agent has key loaded: `ssh-add -l`
-
----
-
 ## Conclusion
 
 In this project, we successfully implemented dynamic variable management using Ansible's `include` module, allowing environment-specific configurations without code duplication. By leveraging community roles from Ansible Galaxy for MySQL, Nginx, and Apache, we significantly reduced development time while maintaining production-ready standards. The implementation of conditional role execution enables seamless switching between load balancers based on environment variables, demonstrating Infrastructure as Code best practices. This flexible, maintainable setup can now efficiently manage multiple environments (Dev, Staging, UAT, Production) from a single codebase, making infrastructure provisioning faster, more consistent, and scalable for real-world applications.
 
 ---
-
-# Ansible Dynamic Assignments (Include) and Community Roles
 
 > **Note:** This project is part of the **StegHub DevOps/Cloud Engineering Bootcamp**.
 
