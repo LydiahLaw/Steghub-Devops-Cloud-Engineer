@@ -1,6 +1,5 @@
 # Project 14: CI/CD Pipeline with Jenkins, Ansible & SonarCloud
 
-![Jenkins Pipeline](screenshots/all%20stages%20added.png)
 
 ## Table of Contents
 - [Overview](#overview)
@@ -46,8 +45,6 @@ Git Push → Jenkins → Tests → Code Analysis → Deploy
     Dev Env        SIT Env        CI Env
 ```
 
-![Blue Ocean View](screenshots/blueocean.png)
-
 ---
 
 ## Technologies
@@ -71,7 +68,6 @@ Git Push → Jenkins → Tests → Code Analysis → Deploy
 - jenkins-agent-1/2 (t2.micro) - Build executors
 - todo-dev, nginx-dev, db-dev - Dev environment
 
-![Infrastructure](screenshots/inventory%20assets.png)
 
 **Ansible Inventory:**
 ```
@@ -82,8 +78,9 @@ inventory/
 └── pentest     # Penetration testing
 ```
 
-![Inventory Files](screenshots/nano%20ci.png)
-![Dev Inventory](screenshots/nano%20dev.png)
+<img width="1366" height="768" alt="nano ci" src="https://github.com/user-attachments/assets/41e2f8b7-6b17-4d9d-9913-aff794685fb1" />
+<img width="1366" height="768" alt="nano dev" src="https://github.com/user-attachments/assets/d5ddf709-63dd-4fe8-81ab-fffd4d60ff99" />
+
 
 ---
 
@@ -98,12 +95,14 @@ inventory/
 - Plot - Metrics visualization
 - GitHub Integration - Webhook support
 
-![Blue Ocean Plugin](screenshots/blueocean%20feature.png)
-![Ansible Config](screenshots/ansible%20configjenkins.png)
+<img width="1366" height="768" alt="blueocean" src="https://github.com/user-attachments/assets/61e51ee0-ccc0-44ef-a136-48e635c7089d" />
+
+<img width="1366" height="768" alt="ansible configjenkins" src="https://github.com/user-attachments/assets/a0baec19-5409-41a9-b65d-a6e1e5f0bb68" />
+
 
 **Agents Configuration:**
 
-![Jenkins Nodes](screenshots/nodes%20created.png)
+![Uploading blueocean.png…]()
 
 Both agents configured with:
 - Java 11
@@ -111,7 +110,6 @@ Both agents configured with:
 - PHP 8.3 + Composer
 - SSH access to target servers
 
-![SSH Key Added](screenshots/adding%20ssh%20to%20jenkins.png)
 
 ### GitHub Integration
 
@@ -120,19 +118,18 @@ Both agents configured with:
 - Created deploy/Jenkinsfile
 - Configured webhook to Jenkins
 
-![Forked Repository](screenshots/forkedtodo.png)
-![Jenkins Branch Detection](screenshots/jenkins%20branch.png)
+<img width="1366" height="768" alt="jenkinsfile found" src="https://github.com/user-attachments/assets/34570ed8-7282-4500-a451-26dacb0dd07f" />
+
 
 **Access Token:**
 
-![GitHub Token](screenshots/new%20access%20token.png)
-![Connect to Jenkins](screenshots/connect%20tojen.png)
+<img width="1366" height="768" alt="connect tojen" src="https://github.com/user-attachments/assets/805f9f5e-177f-4536-8a60-136064e6e221" />
+
 
 ### Jenkinsfile
 
 **Initial Version (2 stages):**
 
-![2 Stages](screenshots/2%20stages%20build%20and%20test.png)
 
 **Expanded Pipeline:**
 
@@ -205,9 +202,11 @@ pipeline {
 }
 ```
 
-![More Stages](screenshots/more%20stages%20added.png)
-![All Stages](screenshots/all%20stages%20added.png)
-![Script Path](screenshots/change%20script%20path.png)
+<img width="1366" height="768" alt="2 stages build and test" src="https://github.com/user-attachments/assets/05be5cef-92ca-404a-8dbc-ad296fd58eef" />
+<img width="1366" height="768" alt="all stages added" src="https://github.com/user-attachments/assets/229f4d2a-c732-4004-9981-d3ae1072b116" />
+<img width="1366" height="768" alt="change script path" src="https://github.com/user-attachments/assets/2e16bf80-b367-48d8-8505-f1d68fa4d41e" />
+
+
 
 ### Database Configuration
 
@@ -223,25 +222,24 @@ GRANT ALL PRIVILEGES ON *.* TO 'homestead'@'%';
 
 **Connection Test from Jenkins:**
 
-![DB Connection](screenshots/logintodbfromjenkins.png)
-
 **Migration Result:**
+<img width="1366" height="768" alt="todo succesfulltables created" src="https://github.com/user-attachments/assets/365f213b-740f-4470-a277-7f1e8defa0a6" />
 
-![Tables Created](screenshots/todo%20succesfulltables%20created.png)
-![Homestead Tables](screenshots/homesteadtable.png)
+<img width="1366" height="768" alt="todo succesfulltables created" src="https://github.com/user-attachments/assets/cb513b68-d9c7-4198-ba15-1d37a5c22cd1" />
+
 
 ### SonarCloud Integration
 
 **Configuration:**
 
-![SonarQube Scanner](screenshots/sonarqube%20downloaded%20in%20jenkins.png)
-![Token Config](screenshots/configue%20sonartoken%20on%20jenkins.png)
+<img width="1366" height="768" alt="sonarqubeloggedin" src="https://github.com/user-attachments/assets/a5696826-706f-45c6-afde-e578240c6f0f" />
+
 
 **Analysis Results:**
 
-![Analysis Success](screenshots/sonarqbue%20analysis%20succesfull.png)
-![SonarCloud Summary](screenshots/sonarcloud%20summary.png)
-![Code Smells](screenshots/sonarcloud%20codesmells.png)
+<img width="1366" height="768" alt="sonarcloud codesmells" src="https://github.com/user-attachments/assets/088953ba-f440-4f1c-a87c-a7029b35f527" />
+<img width="1366" height="768" alt="sonarcloud summary" src="https://github.com/user-attachments/assets/d4c7c1c8-ba3b-4dff-82c3-4b3475db184e" />
+
 
 ### Ansible Deployment
 
@@ -261,14 +259,14 @@ GRANT ALL PRIVILEGES ON *.* TO 'homestead'@'%';
         msg: "Deploying to {{ inventory_hostname }}"
 ```
 
-![Ansible Installed](screenshots/ansible%20installed.png)
-![Playbook Success 1](screenshots/ansible%20pipeline%20success1.png)
-![Playbook Success 2](screenshots/ansible%20pipeline%20success2.png)
+<img width="1366" height="768" alt="ansible installed" src="https://github.com/user-attachments/assets/3144bd89-1b5d-4d45-b5fa-e36c28e11744" />
+<img width="1366" height="768" alt="ansible pipeline success1" src="https://github.com/user-attachments/assets/22750d2c-46d3-4521-9c60-569319056806" />
+<img width="1366" height="768" alt="ansible pipeline success2" src="https://github.com/user-attachments/assets/23d2b0ef-3635-4054-b196-3f3f18874a02" />
 
 **Parameterized Deployment:**
 
-![Build Parameters](screenshots/buildwith%20para.png)
-![Deploy Config](screenshots/deployconfig.png)
+<img width="1366" height="768" alt="buildwith para" src="https://github.com/user-attachments/assets/fff13028-dff4-40eb-8b95-255f3e4fe3f2" />
+<img width="1366" height="768" alt="deployconfig" src="https://github.com/user-attachments/assets/71534e9b-64bf-4ee9-80c0-ef91642c99bc" />
 
 ---
 
@@ -286,7 +284,7 @@ Clones latest code from GitHub main branch.
 - Generates Laravel application key
 - Clears configuration cache
 
-![PHP Dependencies](screenshots/phpdependecies.png)
+<img width="1366" height="768" alt="phpdependecies" src="https://github.com/user-attachments/assets/9c460799-1224-4386-9a06-3ece819e7c9c" />
 
 ### 4. Database Setup
 - Runs migrations (drops and recreates tables)
@@ -326,8 +324,8 @@ Analyzes code for:
 ✅ **Infrastructure as Code** - Full environment in Ansible  
 ✅ **Multi-Environment** - Deploy to dev, sit, ci via parameters  
 
-![Build Success](screenshots/build%20succesful.png)
-![Feature Branch](screenshots/feature%20on%20jenkins.png)
+<img width="1366" height="768" alt="phpdependecies" src="https://github.com/user-attachments/assets/c839f385-8982-4354-9539-ca23b2893769" />
+<img width="1366" height="768" alt="feature on jenkins" src="https://github.com/user-attachments/assets/3b190c9b-af81-4407-810e-2a937dcfe34c" />
 
 ---
 
@@ -442,10 +440,8 @@ Schema::create('tasks', function (Blueprint $table) {
 - Installation needed PostgreSQL + Java 11
 - Instance repeatedly crashed due to memory constraints
 - Frequent stopping/starting made it unreliable
+<img width="1366" height="768" alt="sonaqube is running" src="https://github.com/user-attachments/assets/4e321198-77d2-4c27-9d30-a2ba695c9b7c" />
 
-![SonarQube Attempted](screenshots/sonaqube%20is%20running.png)
-![Browser Access](screenshots/browsersonaqube.png)
-![Logged In](screenshots/sonarqubeloggedin.png)
 
 **SonarCloud Benefits:**
 - Cloud-hosted, no infrastructure cost
@@ -459,8 +455,6 @@ Schema::create('tasks', function (Blueprint $table) {
 ### No JFrog Artifactory
 
 **Blocker:** JFrog changed signup to require company email addresses. Personal/student emails no longer accepted.
-
-![Artifactory Attempted](screenshots/artifactory.png)
 
 **Alternative:** Direct deployment from Git acceptable for demonstration. In production, would use:
 - AWS S3 for artifact storage
@@ -483,8 +477,8 @@ Schema::create('tasks', function (Blueprint $table) {
 - Security vulnerabilities: 0
 - Technical debt: 2h 30min
 
-![CI Deployment Success](screenshots/deploytociserverssuccesful.png)
-![Nginx Installed](screenshots/nginx%20installed.png)
+<img width="1366" height="768" alt="deploytociserverssuccesful" src="https://github.com/user-attachments/assets/b3bb932f-61a3-4d92-8a80-327ae772b9a4" />
+<img width="1366" height="768" alt="nginx installed" src="https://github.com/user-attachments/assets/40721f05-4431-4811-9680-162b4f728670" />
 
 **Infrastructure:**
 - 6 EC2 instances managed
@@ -492,15 +486,16 @@ Schema::create('tasks', function (Blueprint $table) {
 - 2 agents distributing load
 - Full automation achieved
 
-![Dev Ansible Steps](screenshots/devansibleplaybookalsteps.png)
+<img width="1366" height="768" alt="devansibleplaybookalsteps" src="https://github.com/user-attachments/assets/e99ce300-05e3-4c5b-be1d-f4f27205b851" />
 
 **Git Workflow:**
 
-![Pull Request](screenshots/pullrequest.png)
-![Merge Main](screenshots/merge%20with%20main.png)
-![Jenkinsfile Updated](screenshots/updated%20jenkins%20file2.png)
+<img width="1366" height="768" alt="pullrequest" src="https://github.com/user-attachments/assets/123b24da-0c4d-4e98-a8f9-1fe85039f74f" />
+<img width="1366" height="768" alt="merge with main" src="https://github.com/user-attachments/assets/7d761fb4-8d10-4161-a911-793280e6111c" />
+<img width="1366" height="768" alt="updated jenkins file2" src="https://github.com/user-attachments/assets/a85a4849-0b5d-4493-9220-1538fb660a08" />
 
 ---
+<img width="1366" height="768" alt="sonarqbue analysis succesfull" src="https://github.com/user-attachments/assets/1d5cd526-13ab-436a-955d-020bd9dadf15" />
 
 ## Key Takeaways
 
