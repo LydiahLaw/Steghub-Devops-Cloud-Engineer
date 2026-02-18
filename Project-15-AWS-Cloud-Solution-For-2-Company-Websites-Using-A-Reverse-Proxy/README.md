@@ -1,6 +1,6 @@
 # AWS Multi-Website Infrastructure with NGINX Reverse Proxy
 
-## Ì≥ã Table of Contents
+## Table of Contents
 - [Project Overview](#project-overview)
 - [Architecture Diagram](#architecture-diagram)
 - [Phase 1: AWS Account Setup](#phase-1-aws-account-setup)
@@ -39,7 +39,7 @@ This project implements a highly available, secure, and scalable AWS infrastruct
 
 ## Architecture Diagram
 
-![Architecture Diagram](./images/architecture-diagram.png)
+<img width="1024" height="955" alt="architecture" src="https://github.com/user-attachments/assets/cefc6542-c374-4311-bb31-6ed099ef632d" />
 
 ---
 
@@ -50,31 +50,24 @@ This project implements a highly available, secure, and scalable AWS infrastruct
 - Complete billing and identity verification
 - This becomes the Root Account for organization management
 
-![Master Account](./images/master-account.png)
-
 ### 2. Enable AWS Organizations
 - Navigate to AWS Organizations
 - Create organization with "All features"
 
-![AWS Organizations](./images/aws-organizations.png)
-
 ### 3. Create Organizational Unit (OU)
 - Name: `Dev`
 - This OU contains development AWS accounts
-
-![Create OU](./images/create-ou.png)
 
 ### 4. Create DevOps Sub-Account
 - Account name: `DevOps`
 - Email: (Different from master account)
 - IAM role: `OrganizationAccountAccessRole`
 
-![DevOps Account](./images/devops-account.png)
 
 ### 5. Move DevOps Account to Dev OU
 - Select DevOps account ‚Üí Move to `Dev` OU
 
-![Move to OU](./images/move-to-ou.png)
+<img width="1366" height="768" alt="create org unit" src="https://github.com/user-attachments/assets/34d58b25-462c-4c25-8dde-a6034a2f2568" />
 
 **‚ö†Ô∏è All infrastructure deployed in DevOps account, not Master account.**
 
@@ -96,20 +89,19 @@ This project implements a highly available, secure, and scalable AWS infrastruct
 - CIDR: `10.0.0.0/16`
 - Enable DNS hostnames and DNS resolution
 
-![Create VPC](./images/create-vpc.png)
+<img width="1366" height="768" alt="vpc created 1" src="https://github.com/user-attachments/assets/9d35e7b7-275b-4849-ad96-0c8d8fc95c97" />
 
 ### 2. Create Subnets
 Create all 6 subnets according to the network design table above.
 
 **Enable auto-assign public IPv4 on both public subnets.**
 
-![Create Subnets](./images/create-subnets.png)
+<img width="1366" height="768" alt="subnets created" src="https://github.com/user-attachments/assets/87b60848-eacc-41b5-8c03-fe587e65b39d" />
 
 ### 3. Create Route Table for Public Subnets
 - Name: `rtb-public`
 - Associate with both public subnets (`public-subnet-az-a` & `public-subnet-az-b`)
 
-![Public Route Table](./images/rtb-public.png)
 
 ### 4. Create Route Table for Private Subnets
 - Name: `rtb-private`
@@ -117,13 +109,13 @@ Create all 6 subnets according to the network design table above.
   - Private App Subnets (10.0.2.0/24 & 10.0.4.0/24)
   - Private Data Subnets (10.0.5.0/24 & 10.0.6.0/24)
 
-![Private Route Table](./images/rtb-private.png)
+<img width="1366" height="768" alt="private routetable" src="https://github.com/user-attachments/assets/05bd7125-766d-41c1-b993-88d947208248" />
 
 ### 5. Create Internet Gateway
 - Name: `igw-multiweb`
 - Attach to VPC `multiweb-vpc`
 
-![Internet Gateway](./images/igw.png)
+<img width="1366" height="768" alt="attach internet gateway" src="https://github.com/user-attachments/assets/6e81c227-d1a1-422a-996d-92f08cb4dd99" />
 
 ### 6. Update Public Route Table
 In `rtb-public`, add route:
@@ -132,7 +124,6 @@ In `rtb-public`, add route:
 
 This enables internet access for public subnets.
 
-![Public Route](./images/public-route.png)
 
 ### 7. Allocate Elastic IPs
 Allocate 3 Elastic IPs:
@@ -140,7 +131,7 @@ Allocate 3 Elastic IPs:
 - `EIP-Bastion-A`
 - `EIP-Bastion-B`
 
-![Elastic IPs](./images/eips.png)
+<img width="1366" height="768" alt="elasticips allocated" src="https://github.com/user-attachments/assets/8a2efc0e-6397-44a7-8024-22710f06ce3d" />
 
 ### 8. Create NAT Gateway
 - Name: `nat-gateway-az-a`
@@ -153,7 +144,7 @@ Allocate 3 Elastic IPs:
 
 This provides outbound internet access for private subnets.
 
-![NAT Gateway](./images/nat-gateway.png)
+<img width="1366" height="768" alt="natgateway created" src="https://github.com/user-attachments/assets/5cbc08d0-f5e1-4b41-bf5f-d4e29635ca77" />
 
 ---
 
@@ -211,7 +202,7 @@ Allow NFS from NGINX and webservers
 - NFS (2049) from `sg-nginx`
 - NFS (2049) from `sg-webservers`
 
-![Security Groups](./images/security-groups.png)
+<img width="1366" height="768" alt="security grroups created" src="https://github.com/user-attachments/assets/7f86ec4a-49d4-49f5-851e-b152f32b08e9" />
 
 ---
 
@@ -231,13 +222,11 @@ yum update -y
 yum install python3 chrony net-tools vim wget telnet htop -y
 ```
 
-![NGINX Instance](./images/nginx-instance.png)
 
 ### 2. Create NGINX AMI
 - Name: `nginx-ami-v1`
 - Terminate original instance after AMI creation
 
-![NGINX AMI](./images/nginx-ami.png)
 
 ### 3. Create NGINX Launch Template
 - Name: `lt-nginx`
@@ -251,6 +240,7 @@ yum install nginx -y
 systemctl enable nginx
 systemctl start nginx
 ```
+<img width="1366" height="768" alt="launchtemplate nginx" src="https://github.com/user-attachments/assets/9664cd8f-ca1a-4f48-b4e5-ad18a5e59185" />
 
 ### 4. Create NGINX Target Group
 - Name: `tg-nginx`
@@ -265,8 +255,6 @@ systemctl start nginx
 - Desired/Min/Max: 2/2/4
 - Scaling policy: CPU 90%
 - SNS topic: `sns-nginx-scaling`
-
-![NGINX ASG](./images/nginx-asg.png)
 
 ---
 
@@ -303,7 +291,8 @@ yum install ansible git -y
 - Subnets: Both public subnets
 - Desired/Min/Max: 2/2/4
 
-![Bastion ASG](./images/bastion-asg.png)
+<img width="1366" height="768" alt="bastionautoscaling" src="https://github.com/user-attachments/assets/554381f6-953b-4cda-b042-45631bedd252" />
+
 
 ---
 
@@ -367,7 +356,10 @@ systemctl restart httpd
 - WordPress: `asg-wordpress` (private app subnets, 2/2/4)
 - Tooling: `asg-tooling` (private app subnets, 2/2/4)
 
-![Webserver ASGs](./images/webserver-asgs.png)
+<img width="1366" height="768" alt="autoscaling groups" src="https://github.com/user-attachments/assets/b7d6a118-f415-4d50-b929-832bb0e99798" />
+
+<img width="1366" height="768" alt="alltarget groups created" src="https://github.com/user-attachments/assets/b210b38f-64dc-4119-9dc9-6af2ebcb3cff" />
+
 
 ---
 
@@ -382,7 +374,6 @@ systemctl restart httpd
 
 **Save the ALB DNS name for accessing websites**
 
-![Public ALB](./images/alb-public.png)
 
 ### 2. Create Internal ALB for WordPress
 - Name: `alb-wordpress-internal`
@@ -402,7 +393,7 @@ systemctl restart httpd
 
 **Save DNS name for NGINX configuration**
 
-![Internal ALBs](./images/internal-albs.png)
+<img width="1366" height="768" alt="all loadbalancers created" src="https://github.com/user-attachments/assets/248e84c6-e533-4e37-89e2-b1cab0ea9b6d" />
 
 ---
 
@@ -428,7 +419,7 @@ systemctl restart httpd
 - Security group: `sg-rds`
 - Encryption: `kms-rds-key`
 
-![RDS Database](./images/rds.png)
+<img width="1366" height="768" alt="kms created" src="https://github.com/user-attachments/assets/2e0d5fa6-8dce-43a9-a6c9-e10c1f0dba8c" />
 
 ### 4. Create EFS File System
 - Name: `efs-shared-content`
@@ -436,7 +427,7 @@ systemctl restart httpd
 - Mount targets: Both private data subnets
 - Security group: `sg-efs`
 
-![EFS](./images/efs.png)
+<img width="1366" height="768" alt="efs system created" src="https://github.com/user-attachments/assets/b66053cc-d7d3-478e-ac0f-db4308ddf527" />
 
 ---
 
@@ -529,7 +520,7 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-![NGINX Configuration](./images/nginx-config.png)
+<img width="1366" height="768" alt="proxy config" src="https://github.com/user-attachments/assets/0746509c-d89e-40bd-8c0d-fdb15c877c99" />
 
 ---
 
@@ -541,7 +532,6 @@ All target groups should show healthy:
 - `tg-wordpress`: 2/2 healthy
 - `tg-tooling`: 2/2 healthy
 
-![Healthy Targets](./images/healthy-targets.png)
 
 ### Test WordPress
 
@@ -551,7 +541,7 @@ http://<ALB-PUBLIC-DNS>/
 
 Should display WordPress page.
 
-![WordPress](./images/wordpress-test.png)
+<img width="1366" height="768" alt="wordpress server running" src="https://github.com/user-attachments/assets/d43d3b7b-5169-4530-b0fd-d992a83814d2" />
 
 ### Test Tooling
 
@@ -561,7 +551,7 @@ http://<ALB-PUBLIC-DNS>/tooling
 
 Should display Tooling page.
 
-![Tooling](./images/tooling-test.png)
+<img width="1366" height="768" alt="tooling sever up" src="https://github.com/user-attachments/assets/b3e772bb-38cc-4022-89da-53977e7701aa" />
 
 ---
 
