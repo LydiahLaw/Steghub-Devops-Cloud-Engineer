@@ -1,34 +1,34 @@
-# Ì∫Ä Automate Infrastructure With IaC using Terraform
+# Automate Infrastructure With IaC using Terraform
 
 > **Project 16 | DevOps/Cloud Engineering | StegHub Apprenticeship**
 
 This project demonstrates how to automate provisioning of AWS infrastructure using Terraform, focusing on:
 
-- ‚úÖ AWS IAM configuration with programmatic access
-- ‚úÖ VPC creation using Terraform
-- ‚úÖ Dynamic subnet creation using loops, data sources, and functions
-- ‚úÖ Refactoring from hardcoded values to reusable variables
-- ‚úÖ Best practices for structuring Infrastructure as Code (IaC)
+- AWS IAM configuration with programmatic access
+- VPC creation using Terraform
+- Dynamic subnet creation using loops, data sources, and functions
+- Refactoring from hardcoded values to reusable variables
+- Best practices for structuring Infrastructure as Code (IaC)
 
 This is the IaC version of the architecture previously built manually.
 
 ---
 
-## Ì≥ö Table of Contents
+## Table of Contents
 
-1. [Prerequisites](#-prerequisites)
-   - [Create IAM User for Terraform](#1Ô∏è‚É£-create-an-iam-user-for-terraform)
-   - [Configure AWS CLI](#2Ô∏è‚É£-configure-aws-cli)
-   - [Install Python SDK (boto3)](#3Ô∏è‚É£-install-python-sdk-boto3)
-   - [Create S3 Bucket for Terraform State](#4Ô∏è‚É£-create-an-s3-bucket-for-terraform-state)
-   - [Install Terraform](#5Ô∏è‚É£-install-terraform)
-2. [Project Setup](#-project-setup)
+1. [Prerequisites](#prerequisites)
+   - [Create IAM User for Terraform](#1-create-an-iam-user-for-terraform)
+   - [Configure AWS CLI](#2-configure-aws-cli)
+   - [Install Python SDK (boto3)](#3-install-python-sdk-boto3)
+   - [Create S3 Bucket for Terraform State](#4-create-an-s3-bucket-for-terraform-state)
+   - [Install Terraform](#5-install-terraform)
+2. [Project Setup](#project-setup)
    - [Create Project Directory](#step-1--create-project-directory)
    - [Configure Provider Block](#step-2--configure-terraform-provider)
-3. [Part 102 ‚Äî VPC Creation](#-part-102--vpc-creation)
+3. [Part 102 - VPC Creation](#part-102---vpc-creation)
    - [Write VPC Resource](#step-3--create-vpc-resource)
    - [Initialize and Apply](#step-4--initialize-plan-and-apply)
-4. [Part 103 ‚Äî Subnet Creation (Hardcoded First)](#-part-103--subnet-creation)
+4. [Part 103 - Subnet Creation (Hardcoded First)](#part-103---subnet-creation)
    - [Add Hardcoded Subnets](#step-5--add-subnets-hardcoded-version)
    - [Identify Problems](#step-6--observe-the-problems-with-hardcoded-values)
    - [Refactor with Variables and Loops](#step-7--refactor-fix-hardcoded-values)
@@ -36,30 +36,30 @@ This is the IaC version of the architecture previously built manually.
    - [Dynamic CIDR with cidrsubnet()](#step-9--make-cidr-blocks-dynamic-with-cidrsubnet)
    - [Remove Hardcoded Count with length()](#step-10--remove-hardcoded-count-with-length)
    - [Add a Conditional](#step-11--add-a-conditional-to-control-subnet-count)
-5. [Part 104 ‚Äî File Structure Refactor](#-part-104--file-structure-refactor)
+5. [Part 104 - File Structure Refactor](#part-104---file-structure-refactor)
    - [Create variables.tf](#step-12--create-variablestf)
    - [Create terraform.tfvars](#step-13--create-terraformtfvars)
    - [Clean Up main.tf](#step-14--final-maintf)
    - [Final File Structure](#step-15--verify-final-file-structure)
-6. [Deprecated Features Note](#-deprecated-features-note)
-7. [Key Terraform Concepts Learned](#-key-terraform-concepts-learned)
-8. [Conclusion](#-conclusion)
+6. [Deprecated Features Note](#deprecated-features-note)
+7. [Key Terraform Concepts Learned](#key-terraform-concepts-learned)
+8. [Conclusion](#conclusion)
 
 ---
 
-## Ì¥ß Prerequisites
+## Prerequisites
 
 Before writing Terraform code, ensure the following are set up:
 
 ---
 
-### 1Ô∏è‚É£ Create an IAM User for Terraform
+### 1. Create an IAM User for Terraform
 
-> ‚ö†Ô∏è **Important Note:** AWS removed the old "Programmatic Access" checkbox during user creation. Access keys must now be created **after** the user is created.
+> **Important Note:** AWS removed the old "Programmatic Access" checkbox during user creation. Access keys must now be created **after** the user is created.
 
 **Step-by-step:**
 
-Go to: **IAM ‚Üí Users ‚Üí Create User**
+Go to: **IAM -> Users -> Create User**
 
 - Enter username:
 
@@ -67,10 +67,12 @@ Go to: **IAM ‚Üí Users ‚Üí Create User**
 terraform
 ```
 
-- ‚ùå Do **NOT** enable console access ‚Äî do not check "Provide user access to AWS Management Console". Terraform does not need console login.
+- Do **NOT** enable console access ‚Äî do not check "Provide user access to AWS Management Console". Terraform does not need console login.
 - Under **Permissions**, choose **Attach policies directly**
-- Select: ‚úÖ `AdministratorAccess`
+- Select: `AdministratorAccess`
 - Click **Create user**
+- 
+<img width="1366" height="768" alt="iamusercreated" src="https://github.com/user-attachments/assets/78cdd8e4-d014-4277-8d19-833b5b0c4394" />
 
 **Now create Access Keys (Programmatic Access):**
 
@@ -78,19 +80,19 @@ terraform
 - Go to the **Security credentials** tab
 - Scroll down to **Access Keys**
 - Click **Create access key**
-- Select: ‚úÖ **Command Line Interface (CLI)**
+- Select: **Command Line Interface (CLI)**
 - Check the confirmation checkbox, click **Next**, then **Create access key**
 - Copy and save both values immediately:
   - `Access Key ID`
   - `Secret Access Key`
 
-> ‚ö†Ô∏è You will **not** be able to view the Secret Access Key again after closing this page.
+> You will **not** be able to view the Secret Access Key again after closing this page.
 
-Ì≥∏ *[Screenshot: IAM user creation and access key screen]*
+<img width="1366" height="768" alt="access keys created" src="https://github.com/user-attachments/assets/35e6956c-7dcd-4d83-a1d5-e67d5936b1ba" />
 
 ---
 
-### 2Ô∏è‚É£ Configure AWS CLI
+### 2. Configure AWS CLI
 
 Install AWS CLI from [https://aws.amazon.com/cli/](https://aws.amazon.com/cli/), then run:
 
@@ -107,11 +109,11 @@ Enter when prompted:
 
 This creates `~/.aws/credentials`, enabling Terraform to authenticate with AWS automatically.
 
-Ì≥∏ *[Screenshot: Terminal showing aws configure output]*
+<img width="1366" height="768" alt="aws configure" src="https://github.com/user-attachments/assets/5bffacb8-ec82-424c-9d3d-f67cbf9369eb" />
 
 ---
 
-### 3Ô∏è‚É£ Install Python SDK (boto3)
+### 3. Install Python SDK (boto3)
 
 Install boto3:
 
@@ -128,17 +130,17 @@ for bucket in s3.buckets.all():
     print(bucket.name)
 ```
 
-If you see your bucket names listed ‚Üí authentication is working correctly.
+If you see your bucket names listed, authentication is working correctly.
 
-Ì≥∏ *[Screenshot: Terminal showing bucket name printed]*
+<img width="1366" height="768" alt="bucket confirmed" src="https://github.com/user-attachments/assets/544e4ddb-545d-47b1-a354-dfdc12e69ac1" />
 
 ---
 
-### 4Ô∏è‚É£ Create an S3 Bucket for Terraform State
+### 4. Create an S3 Bucket for Terraform State
 
-> Ì≥å This bucket will be used from **Project 17 onwards** to store the Terraform remote state file.
+> This bucket will be used from **Project 17 onwards** to store the Terraform remote state file.
 
-Go to **AWS Console ‚Üí S3 ‚Üí Create bucket**
+Go to **AWS Console -> S3 -> Create bucket**
 
 - Bucket name example:
 
@@ -150,11 +152,11 @@ lydiah-dev-terraform-bucket
 - Select your region: `eu-central-1`
 - Leave all other settings as default and click **Create bucket**
 
-Ì≥∏ *[Screenshot: S3 bucket created in AWS Console]*
+<img width="1366" height="768" alt="bucketcreated" src="https://github.com/user-attachments/assets/25ea0e04-998f-4cfd-b8a3-421ef692c5d8" />
 
 ---
 
-### 5Ô∏è‚É£ Install Terraform
+### 5. Install Terraform
 
 Download Terraform from:
 
@@ -168,11 +170,9 @@ After installation, verify by running:
 terraform --version
 ```
 
-Ì≥∏ *[Screenshot: Terminal showing terraform version]*
-
 ---
 
-## Ìøó Project Setup
+## Project Setup
 
 ### Step 1 ‚Äî Create Project Directory
 
@@ -188,9 +188,6 @@ Inside that folder, create a subfolder called `PBL`. Then create the main Terraf
 PBL/
 ‚îî‚îÄ‚îÄ main.tf
 ```
-
-Ì≥∏ *[Screenshot: VS Code Explorer showing PBL folder and main.tf]*
-
 ---
 
 ### Step 2 ‚Äî Configure Terraform Provider
@@ -203,12 +200,12 @@ provider "aws" {
 }
 ```
 
-> Ì≥ù **Why not hardcode the region?**
+> **Why not hardcode the region?**
 > We start with a hardcoded value deliberately ‚Äî to understand the problem first. Later we refactor this to use a variable, which makes the code reusable across environments (dev, test, prod) and portable across regions.
 
 ---
 
-## Ìºê Part 102 ‚Äî VPC Creation
+## Part 102 - VPC Creation
 
 ### Step 3 ‚Äî Create VPC Resource
 
@@ -227,7 +224,7 @@ resource "aws_vpc" "main" {
 }
 ```
 
-> ‚ö†Ô∏è **Deprecated attributes excluded:** `enable_classiclink` and `enable_classiclink_dns_support` have been **removed** from the AWS Terraform provider. Do not include them. See the [Deprecated Features Note](#-deprecated-features-note) section below.
+> **Deprecated attributes excluded:** `enable_classiclink` and `enable_classiclink_dns_support` have been **removed** from the AWS Terraform provider. Do not include them. See the [Deprecated Features Note](#deprecated-features-note) section below.
 
 ---
 
@@ -241,7 +238,7 @@ terraform init
 
 This downloads the AWS provider plugin into a `.terraform/` directory.
 
-Ì≥∏ *[Screenshot: terraform init success output]*
+<img width="1366" height="768" alt="first terrfaorm plan" src="https://github.com/user-attachments/assets/17f894ba-4fb6-4a12-a785-2c0d44aa2b39" />
 
 Then check what Terraform intends to create:
 
@@ -257,17 +254,16 @@ terraform apply
 
 Type `yes` when prompted.
 
-Ì≥∏ *[Screenshot: terraform apply complete output]*
+<img width="1366" height="768" alt="first terraform init" src="https://github.com/user-attachments/assets/faeb2132-6c70-4cb0-b479-57911c4a8c70" />
 
-Ì≥∏ *[Screenshot: AWS Console showing newly created VPC]*
 
-> Ì≥ù **New files Terraform created:**
+> **New files Terraform created:**
 > - `terraform.tfstate` ‚Äî Terraform's "memory". It tracks everything it has built.
 > - `terraform.tfstate.lock.info` ‚Äî A temporary lock file that prevents two people from running Terraform at the same time. It gets deleted after the operation completes.
 
 ---
 
-## Ì¥Ä Part 103 ‚Äî Subnet Creation
+## Part 103 - Subnet Creation
 
 ### Step 5 ‚Äî Add Subnets (Hardcoded Version)
 
@@ -298,7 +294,7 @@ terraform plan
 terraform apply
 ```
 
-Ì≥∏ *[Screenshot: AWS Console showing 2 public subnets created]*
+<img width="1366" height="768" alt="hadcoded subnets" src="https://github.com/user-attachments/assets/7d807d5e-9e2a-4da1-bad6-6daa48c1843c" />
 
 ---
 
@@ -309,7 +305,7 @@ Looking at the code above, there are two clear problems:
 | Problem | Why It's Bad |
 |---|---|
 | `availability_zone` is hardcoded | Ties the code to one region; breaks if deployed elsewhere |
-| Two separate resource blocks | If you needed 10 subnets, you'd need 10 blocks ‚Äî not scalable |
+| Two separate resource blocks | If you needed 10 subnets, you would need 10 blocks ‚Äî not scalable |
 
 We will fix both. First, destroy the current infrastructure:
 
@@ -319,7 +315,7 @@ terraform destroy
 
 Type `yes` when prompted.
 
-Ì≥∏ *[Screenshot: terraform destroy complete output]*
+<img width="1366" height="768" alt="first terraform destroy" src="https://github.com/user-attachments/assets/bc42b80b-1a35-461c-ab52-5611ebddac50" />
 
 ---
 
@@ -356,7 +352,7 @@ resource "aws_vpc" "main" {
 }
 ```
 
-> Ì≥ù Variables are referenced using `var.<variable_name>`. The `default` value is used unless overridden.
+> Variables are referenced using `var.<variable_name>`. The `default` value is used unless overridden.
 
 ---
 
@@ -420,7 +416,7 @@ cidrsubnet("172.16.0.0/16", 4, 2)
 
 Type `exit` to leave the console.
 
-Ì≥∏ *[Screenshot: terraform console showing cidrsubnet outputs]*
+<img width="1366" height="768" alt="terraform console" src="https://github.com/user-attachments/assets/85e1dde4-1e12-4712-a56a-370af2044445" />
 
 ---
 
@@ -438,7 +434,7 @@ Test in the Terraform console:
 length(["eu-central-1a", "eu-central-1b", "eu-central-1c"])
 ```
 
-> ‚ö†Ô∏è **New problem:** `length()` returns 3 (the number of AZs in the region), but our requirement is only 2 subnets. We need to control this.
+> **New problem:** `length()` returns 3 (the number of AZs in the region), but our requirement is only 2 subnets. We need to control this.
 
 ---
 
@@ -467,10 +463,10 @@ resource "aws_subnet" "public" {
 condition ? value_if_true : value_if_false
 ```
 
-- If `preferred_number_of_public_subnets` is `null` ‚Üí use all available AZs
-- If it has a value ‚Üí use that value (in this case, `2`)
+- If `preferred_number_of_public_subnets` is `null` ‚Äî use all available AZs
+- If it has a value ‚Äî use that value (in this case, `2`)
 
-> Ì≤° Try changing `default = 2` to `default = null` and run `terraform plan` ‚Äî notice it now plans to create 3 subnets (one per AZ). Change it back to `2` before continuing.
+> Try changing `default = 2` to `default = null` and run `terraform plan` ‚Äî notice it now plans to create 3 subnets (one per AZ). Change it back to `2` before continuing.
 
 Run plan and apply to verify everything works:
 
@@ -479,13 +475,13 @@ terraform plan
 terraform apply
 ```
 
-Ì≥∏ *[Screenshot: terraform plan showing 1 VPC + 2 subnets]*
+<img width="1366" height="768" alt="refactored aply" src="https://github.com/user-attachments/assets/2e9cb9ef-e71d-43ff-91f2-179d0a3d132c" />
 
-Ì≥∏ *[Screenshot: AWS Console showing VPC and subnets]*
+<img width="1366" height="768" alt="confirmed refatored subnets created" src="https://github.com/user-attachments/assets/01e2cddb-17e2-4526-bfcc-c160655e5263" />
 
 ---
 
-## Ì≥Ç Part 104 ‚Äî File Structure Refactor
+## Part 104 - File Structure Refactor
 
 Now we separate the code into 3 files for better organisation and readability. First, destroy what's running:
 
@@ -523,9 +519,11 @@ variable "preferred_number_of_public_subnets" {
 }
 ```
 
-> Ì≥ù Note that `preferred_number_of_public_subnets` has `default = null` here ‚Äî the actual value will come from `terraform.tfvars`.
+> Note that `preferred_number_of_public_subnets` has `default = null` here ‚Äî the actual value will come from `terraform.tfvars`.
 
 ---
+<img width="1366" height="768" alt="variablestf" src="https://github.com/user-attachments/assets/52b48356-adf2-46f5-8e33-144038457fb4" />
+
 
 ### Step 13 ‚Äî Create `terraform.tfvars`
 
@@ -545,7 +543,7 @@ enable_dns_hostnames = "true"
 preferred_number_of_public_subnets = 2
 ```
 
-> Ì≥ù **Why separate `variables.tf` and `terraform.tfvars`?**
+> **Why separate `variables.tf` and `terraform.tfvars`?**
 > Think of `variables.tf` as the **declaration** (saying "this variable exists"). Think of `terraform.tfvars` as the **assignment** (saying "here is the actual value I want to use"). This pattern means you can have different `.tfvars` files for different environments ‚Äî `dev.tfvars`, `prod.tfvars` ‚Äî without changing any code.
 
 ---
@@ -597,8 +595,6 @@ PBL/
 ‚îî‚îÄ‚îÄ .terraform/
 ```
 
-Ì≥∏ *[Screenshot: VS Code Explorer showing final file structure]*
-
 Run the final plan and apply:
 
 ```bash
@@ -606,9 +602,9 @@ terraform plan
 terraform apply
 ```
 
-Ì≥∏ *[Screenshot: Final terraform apply complete]*
+<img width="1366" height="768" alt="terraform plan new main" src="https://github.com/user-attachments/assets/79bfaf2f-889f-46ea-a64c-2a2416daa1b1" />
 
-Ì≥∏ *[Screenshot: AWS Console ‚Äî VPC and 2 subnets confirmed]*
+<img width="1366" height="768" alt="terraform apply new main" src="https://github.com/user-attachments/assets/f3442f70-c1ba-4c5e-978a-701181431730" />
 
 Once you have all your screenshots and documentation, clean up to avoid AWS charges:
 
@@ -616,11 +612,11 @@ Once you have all your screenshots and documentation, clean up to avoid AWS char
 terraform destroy
 ```
 
-Ì≥∏ *[Screenshot: terraform destroy complete]*
+<img width="1366" height="768" alt="final cleanup" src="https://github.com/user-attachments/assets/7f5f5725-a0f2-42f3-a07f-a023caaf0cae" />
 
 ---
 
-## ‚ö†Ô∏è Deprecated Features Note
+## Deprecated Features Note
 
 The original project instructions reference two Terraform arguments that have since been **removed** from the AWS provider and were **not implemented** in this project:
 
@@ -633,17 +629,17 @@ These were originally part of the `aws_vpc` resource block in the project instru
 
 ---
 
-## Ì≥ñ Key Terraform Concepts Learned
+## Key Terraform Concepts Learned
 
 | Concept | What It Does |
 |---|---|
 | `terraform init` | Downloads provider plugins ‚Äî always run first |
-| `terraform plan` | Shows what Terraform *will* do ‚Äî always review before applying |
+| `terraform plan` | Shows what Terraform will do ‚Äî always review before applying |
 | `terraform apply` | Creates or updates the actual infrastructure |
 | `terraform destroy` | Tears down all managed infrastructure |
 | `terraform.tfstate` | Terraform's memory ‚Äî tracks what currently exists |
 | `variable` block | Declares a variable with an optional default value |
-| `var.<name>` | References a declared variable |
+| `var.<n>` | References a declared variable |
 | `data` source | Pulls live information from AWS (e.g. available AZs) |
 | `count` | Creates a loop to build multiple resources from one block |
 | `count.index` | The current loop number (0, 1, 2...) |
@@ -654,11 +650,11 @@ These were originally part of the `aws_vpc` resource block in the project instru
 
 ---
 
-## ‚úÖ Conclusion
+## Conclusion
 
 This project successfully demonstrates how to move from manually creating AWS infrastructure to fully automated Infrastructure as Code using Terraform.
 
-Starting with hardcoded values ‚Äî and deliberately identifying their limitations ‚Äî was an important part of the learning process. The progressive refactoring from hardcoded strings ‚Üí variables ‚Üí data sources ‚Üí loops ‚Üí separate files mirrors how real-world Terraform projects evolve.
+Starting with hardcoded values ‚Äî and deliberately identifying their limitations ‚Äî was an important part of the learning process. The progressive refactoring from hardcoded strings to variables to data sources to loops to separate files mirrors how real-world Terraform projects evolve.
 
 The final structure (`main.tf` + `variables.tf` + `terraform.tfvars`) is a clean, scalable pattern that makes infrastructure:
 
@@ -670,5 +666,5 @@ The next project (Project 17) will expand this foundation further, introducing r
 
 ---
 
-> Ì≥ù *Project completed as part of the StegHub Cloud & DevOps Engineering Apprenticeship*
+> *Project completed as part of the StegHub Cloud & DevOps Engineering Apprenticeship*
 > *Tools used: Terraform, AWS (VPC, IAM, S3), VS Code, AWS CLI, Python/boto3*
