@@ -2,7 +2,7 @@
 
 ## The Problem These Models Solve
 
-When two computers need to communicate, an enormous amount of work happens behind the scenes — breaking data into packets, addressing those packets, routing them across networks, ensuring they arrive correctly, and reassembling them at the destination. Before any of this was standardised, different vendors built proprietary systems that could not talk to each other.
+When two computers need to communicate, an enormous amount of work happens behind the scenes breaking data into packets, addressing those packets, routing them across networks, ensuring they arrive correctly, and reassembling them at the destination. Before any of this was standardised, different vendors built proprietary systems that could not talk to each other.
 
 The OSI model and TCP/IP suite are both attempts to bring order to this complexity by defining layers of responsibility. Each layer handles a specific job and communicates only with the layers directly above and below it.
 
@@ -10,7 +10,7 @@ The OSI model and TCP/IP suite are both attempts to bring order to this complexi
 
 ## The OSI Model
 
-OSI stands for Open Systems Interconnection. It was developed by the International Organisation for Standardisation (ISO) as a conceptual framework — a way to understand and discuss how network communication works. It has 7 layers.
+OSI stands for Open Systems Interconnection. It was developed by the International Organisation for Standardisation (ISO) as a conceptual framework a way to understand and discuss how network communication works. It has 7 layers.
 
 You do not need to memorise them. What matters is the idea: each layer adds a specific capability to the communication process, and when something breaks, understanding which layer is responsible helps you find the problem faster.
 
