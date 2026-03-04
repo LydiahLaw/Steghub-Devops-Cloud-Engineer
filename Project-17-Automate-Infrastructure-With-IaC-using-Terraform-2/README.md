@@ -14,12 +14,12 @@
 10. [Step 6 — Security Groups](#step-6--security-groups)
 11. [Step 7 — ACM Certificate](#step-7--acm-certificate)
 12. [Step 8 — Application Load Balancers](#step-8--application-load-balancers)
-13. [Step 9 — Auto Scaling Groups](#step-9--auto-scaling-groups)
-14. [Step 10 — Elastic File System](#step-10--elastic-file-system)
-15. [Step 11 — RDS Instance](#step-11--rds-instance)
-16. [Step 12 — Variables and Outputs](#step-12--variables-and-outputs)
-17. [Step 13 — Plan, Apply, Verify, Destroy](#step-13--plan-apply-verify-destroy)
-18. [Key Concepts](#key-concepts)
+13. [Step 9 — User Data Scripts](#step-9--user-data-scripts)
+14. [Step 10 — Auto Scaling Groups and SNS](#step-10--auto-scaling-groups-and-sns)
+15. [Step 11 — Elastic File System](#step-11--elastic-file-system)
+16. [Step 12 — RDS Instance](#step-12--rds-instance)
+17. [Step 13 — Variables and Outputs](#step-13--variables-and-outputs)
+18. [Step 14 — Plan, Apply, Verify, Destroy](#step-14--plan-apply-verify-destroy)
 19. [Conclusion](#conclusion)
 
 ---
@@ -97,13 +97,55 @@ PBL/
 └── .gitignore
 ```
 
+The `.gitignore` excludes:
+
+```
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+crash.log
+```
+
+- `*.tfstate` → contains real infrastructure state including sensitive values. Never commit this.
+- `terraform.tfvars` → contains your passwords and account number. Anyone cloning creates their own.
+- `.terraform/` → provider plugins folder, auto-downloaded by `terraform init`, no need to track.
+
 ---
 
 ## Step 1 — Add Private Subnets
 
 `main.tf`
 
-Four private subnets are added below the existing public subnets from Project 16, spread across two availability zones.
+Four private subnets are added below the existing public subnets from Project 16, spread across two availability zones. The `terraform {}` block is also added at the top of `main.tf` to declare the `tls` and `random` providers needed later in the project.
+
+```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+}
+```
+
+After adding new providers, run `terraform init` to download them:
+
+```bash
+terraform init
+```
+
+You will see `Installing hashicorp/tls` and `Installing hashicorp/random` in the output.
 
 ```hcl
 resource "aws_subnet" "private" {
@@ -121,7 +163,6 @@ resource "aws_subnet" "private" {
 }
 ```
 
-![Private Subnets](./screenshots/private-subnets.png)
 
 **Code — Explanation**
 - `count.index + 2` → public subnets already used CIDR indexes 0 and 1; private subnets start at 2 to avoid overlap.
@@ -149,7 +190,7 @@ resource "aws_internet_gateway" "ig" {
 }
 ```
 
-![Internet Gateway](./screenshots/internet-gateway.png)
+<img width="1366" height="768" alt="internet gateway" src="https://github.com/user-attachments/assets/d9cfea50-52b7-4887-ad2a-e5edaf3e13d0" />
 
 **Code — Explanation**
 - Attaches an Internet Gateway to the VPC so public subnets can send and receive traffic from the internet.
@@ -200,7 +241,6 @@ resource "aws_nat_gateway" "nat" {
 }
 ```
 
-![NAT Gateway](./screenshots/nat-gateway.png)
 
 **Code — Explanation**
 - `allocation_id` → binds the NAT Gateway to the Elastic IP.
@@ -269,7 +309,6 @@ resource "aws_route_table_association" "public-subnets-assoc" {
 }
 ```
 
-![Route Tables](./screenshots/route-tables.png)
 
 **Code — Explanation**
 - Public subnets route `0.0.0.0/0` to the Internet Gateway — direct, bidirectional internet access.
@@ -325,7 +364,6 @@ resource "aws_iam_instance_profile" "ip" {
 }
 ```
 
-![IAM Role](./screenshots/iam-role.png)
 
 **Code — Explanation**
 - **Trust Policy (AssumeRole)** → answers *who can use this role*. Here `ec2.amazonaws.com` is trusted to assume it.
@@ -337,33 +375,220 @@ resource "aws_iam_instance_profile" "ip" {
 
 ## Step 6 — Security Groups
 
-`security.tf`
 
-One security group per architecture layer. Groups with source-based rules use `aws_security_group_rule` to reference another security group rather than a CIDR block.
 
-```hcl
-# External ALB — HTTP and HTTPS from anywhere
-resource "aws_security_group" "ext-alb-sg" { ... }
 
-# Bastion — SSH from anywhere
-resource "aws_security_group" "bastion_sg" { ... }
+resource "aws_security_group" "ext-alb-sg" {
+  name        = "ext-alb-sg"
+  vpc_id      = aws_vpc.main.id
+  description = "Allow TLS inbound traffic"
 
-# Nginx — HTTPS from ext-alb-sg, SSH from bastion_sg
-resource "aws_security_group" "nginx-sg" { ... }
-resource "aws_security_group_rule" "inbound-nginx-http" {
-  source_security_group_id = aws_security_group.ext-alb-sg.id
-  security_group_id        = aws_security_group.nginx-sg.id
-  ...
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "ext-alb-sg"
+    },
+  )
 }
 
-# Internal ALB — HTTPS from nginx-sg only
-resource "aws_security_group" "int-alb-sg" { ... }
+resource "aws_security_group" "bastion_sg" {
+  name        = "vpc_web_sg"
+  vpc_id      = aws_vpc.main.id
+  description = "Allow incoming HTTP connections."
 
-# Webservers — HTTPS from int-alb-sg, SSH from bastion_sg
-resource "aws_security_group" "webserver-sg" { ... }
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-# Datalayer — NFS (2049) from webservers, MySQL (3306) from bastion and webservers
-resource "aws_security_group" "datalayer-sg" { ... }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "Bastion-SG"
+    },
+  )
+}
+
+resource "aws_security_group" "nginx-sg" {
+  name   = "nginx-sg"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "nginx-SG"
+    },
+  )
+}
+
+resource "aws_security_group_rule" "inbound-nginx-http" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.ext-alb-sg.id
+  security_group_id        = aws_security_group.nginx-sg.id
+}
+
+resource "aws_security_group_rule" "inbound-bastion-ssh" {
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.bastion_sg.id
+  security_group_id        = aws_security_group.nginx-sg.id
+}
+
+resource "aws_security_group" "int-alb-sg" {
+  name   = "my-alb-sg"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "int-alb-sg"
+    },
+  )
+}
+
+resource "aws_security_group_rule" "inbound-ialb-https" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.nginx-sg.id
+  security_group_id        = aws_security_group.int-alb-sg.id
+}
+
+resource "aws_security_group" "webserver-sg" {
+  name   = "my-asg-sg"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "webserver-sg"
+    },
+  )
+}
+
+resource "aws_security_group_rule" "inbound-web-https" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.int-alb-sg.id
+  security_group_id        = aws_security_group.webserver-sg.id
+}
+
+resource "aws_security_group_rule" "inbound-web-ssh" {
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.bastion_sg.id
+  security_group_id        = aws_security_group.webserver-sg.id
+}
+
+resource "aws_security_group" "datalayer-sg" {
+  name   = "datalayer-sg"
+  vpc_id = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "datalayer-sg"
+    },
+  )
+}
+
+resource "aws_security_group_rule" "inbound-nfs-port" {
+  type                     = "ingress"
+  from_port                = 2049
+  to_port                  = 2049
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.webserver-sg.id
+  security_group_id        = aws_security_group.datalayer-sg.id
+}
+
+resource "aws_security_group_rule" "inbound-mysql-bastion" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.bastion_sg.id
+  security_group_id        = aws_security_group.datalayer-sg.id
+}
+
+resource "aws_security_group_rule" "inbound-mysql-webserver" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.webserver-sg.id
+  security_group_id        = aws_security_group.datalayer-sg.id
+}
 ```
 
 ![Security Groups](./screenshots/security-groups.png)
@@ -377,15 +602,16 @@ resource "aws_security_group" "datalayer-sg" { ... }
 ```
 Internet → ext-alb-sg → nginx-sg → int-alb-sg → webserver-sg → datalayer-sg
                          bastion-sg ─────────────────────────────────────────↗
-```
 
----
+<img width="1366" height="768" alt="added securitytf" src="https://github.com/user-attachments/assets/7e2e6fc9-ca42-4970-af70-0bed0c71cf34" />
+
+
 
 ## Step 7 — ACM Certificate
 
 `cert.tf` | `cert_self_signed.tf`
 
-No domain is available for this project. `cert.tf` holds the full ACM + Route 53 configuration as a commented-out placeholder. A self-signed certificate is generated so the ALB HTTPS listeners work.
+No domain is available for this project. `cert.tf` holds the full ACM + Route 53 configuration as a commented-out placeholder for when a domain is available. A self-signed certificate is generated in `cert_self_signed.tf` so the ALB HTTPS listeners work.
 
 ```hcl
 resource "tls_private_key" "self_signed" {
@@ -412,7 +638,7 @@ resource "aws_acm_certificate" "self_signed" {
 }
 ```
 
-![ACM Certificate](./screenshots/acm-cert.png)
+<img width="1366" height="768" alt="self signed" src="https://github.com/user-attachments/assets/bfd7add1-b362-4486-99d2-f11d858d67f9" />
 
 **Code — Explanation**
 - `tls_private_key` → generates an RSA key pair managed in Terraform state.
@@ -479,27 +705,180 @@ resource "aws_lb" "ialb" {
   internal        = true
   security_groups = [aws_security_group.int-alb-sg.id]
   subnets         = [aws_subnet.private[0].id, aws_subnet.private[1].id]
-  ...
+  load_balancer_type = "application"
+  ip_address_type    = "ipv4"
+
+  tags = merge(var.tags, { Name = "ACS-int-alb" })
 }
 
-# Default listener action → WordPress
-# Listener rule → Tooling when host header matches tooling.example.com
+resource "aws_lb_target_group" "wordpress-tgt" {
+  name        = "wordpress-tgt"
+  port        = 443
+  protocol    = "HTTPS"
+  target_type = "instance"
+  vpc_id      = aws_vpc.main.id
+
+  health_check {
+    path                = "/healthstatus"
+    protocol            = "HTTPS"
+    interval            = 10
+    timeout             = 5
+    healthy_threshold   = 5
+    unhealthy_threshold = 2
+  }
+}
+
+resource "aws_lb_target_group" "tooling-tgt" {
+  name        = "tooling-tgt"
+  port        = 443
+  protocol    = "HTTPS"
+  target_type = "instance"
+  vpc_id      = aws_vpc.main.id
+
+  health_check {
+    path                = "/healthstatus"
+    protocol            = "HTTPS"
+    interval            = 10
+    timeout             = 5
+    healthy_threshold   = 5
+    unhealthy_threshold = 2
+  }
+}
+
+resource "aws_lb_listener" "web-listener" {
+  load_balancer_arn = aws_lb.ialb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  certificate_arn   = aws_acm_certificate.self_signed.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.wordpress-tgt.arn
+  }
+}
+
+resource "aws_lb_listener_rule" "tooling-listener" {
+  listener_arn = aws_lb_listener.web-listener.arn
+  priority     = 99
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tooling-tgt.arn
+  }
+
+  condition {
+    host_header {
+      values = ["tooling.example.com"]
+    }
+  }
+}
 ```
 
-![Load Balancers](./screenshots/load-balancers.png)
 
 **Code — Explanation**
 - `internal = false` → external ALB gets a public DNS name; `internal = true` → internal ALB is VPC-only.
 - Target groups define where the ALB sends traffic and how it health-checks instances.
 - The internal ALB listener rule uses `host_header` to route tooling traffic separately from WordPress.
+- Three target groups are created: `nginx-tgt`, `wordpress-tgt`, and `tooling-tgt`.
 
 ---
 
-## Step 9 — Auto Scaling Groups
+## Step 9 — User Data Scripts
+
+`bastion.sh` | `nginx.sh` | `wordpress.sh` | `tooling.sh`
+
+Each launch template references a shell script via `user_data = filebase64("${path.module}/<script>.sh")`. These scripts run automatically on first boot when an EC2 instance is launched by its Auto Scaling Group.
+
+**bastion.sh**
+
+```bash
+#!/bin/bash
+yum update -y
+yum install -y ansible git
+```
+
+**nginx.sh**
+
+```bash
+#!/bin/bash
+yum update -y
+yum install -y nginx
+systemctl start nginx
+systemctl enable nginx
+```
+
+**wordpress.sh**
+
+```bash
+#!/bin/bash
+yum update -y
+yum install -y httpd php php-mysqlnd
+systemctl start httpd
+systemctl enable httpd
+```
+
+**tooling.sh**
+
+```bash
+#!/bin/bash
+yum update -y
+yum install -y httpd php php-mysqlnd git
+systemctl start httpd
+systemctl enable httpd
+```
+
+<img width="1366" height="768" alt="bastion sh" src="https://github.com/user-attachments/assets/6c2dac0e-800b-43ad-9898-d4dea10755a6" />
+<img width="1366" height="768" alt="nginxsh" src="https://github.com/user-attachments/assets/0350e8c6-a120-4bf2-8c5d-1d9a9e9f477d" />
+<img width="1366" height="768" alt="toolingsh" src="https://github.com/user-attachments/assets/4ca5a6d9-3604-4c37-8a23-dd1a9b7032de" />
+<img width="1366" height="768" alt="wordpresssh" src="https://github.com/user-attachments/assets/dbe0e09c-a46f-46ba-80f6-e900b91b51ae" />
+
+
+**Code — Explanation**
+- `filebase64()` → reads the `.sh` file and base64-encodes it. AWS decodes and runs it on instance startup.
+- `${path.module}` → refers to the directory where your `.tf` files live so Terraform finds the scripts regardless of where you run the command from.
+- Each script installs only what that server type needs — Bastion gets Ansible for configuration management, Nginx gets the reverse proxy, WordPress and Tooling get Apache and PHP.
+- These are minimal bootstrap scripts for this project. In Project 19 they are replaced with fully configured AMIs built using Packer.
+
+---
+
+## Step 10 — Auto Scaling Groups and SNS
 
 `asg-bastion-nginx.tf` | `asg-wordpress-tooling.tf`
 
-Four Auto Scaling Groups are created: Bastion and Nginx in public subnets, WordPress and Tooling in private subnets. Each has a Launch Template defining the instance configuration.
+An SNS topic is created first to handle notifications, followed by four Auto Scaling Groups — Bastion and Nginx in public subnets, WordPress and Tooling in private subnets. Each ASG has a Launch Template defining the instance configuration.
+
+**SNS Topic and Notifications**
+
+```hcl
+resource "aws_sns_topic" "acs-sns" {
+  name = "Default_CloudWatch_Alarms_Topic"
+}
+
+resource "aws_autoscaling_notification" "acs_notifications" {
+  group_names = [
+    aws_autoscaling_group.bastion-asg.name,
+    aws_autoscaling_group.nginx-asg.name,
+    aws_autoscaling_group.wordpress-asg.name,
+    aws_autoscaling_group.tooling-asg.name,
+  ]
+
+  notifications = [
+    "autoscaling:EC2_INSTANCE_LAUNCH",
+    "autoscaling:EC2_INSTANCE_TERMINATE",
+    "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+    "autoscaling:EC2_INSTANCE_TERMINATE_ERROR",
+  ]
+
+  topic_arn = aws_sns_topic.acs-sns.arn
+}
+```
+
+**Code — Explanation**
+- `aws_sns_topic` → creates a notification channel that AWS publishes ASG events to.
+- `aws_autoscaling_notification` → subscribes all four ASGs to that topic so any launch, terminate, or error event triggers a notification.
+- In production you would attach an email subscription or Lambda to the SNS topic to act on these events.
+
+**Launch Templates and ASGs**
 
 ```hcl
 resource "aws_launch_template" "bastion-launch-template" {
@@ -539,11 +918,20 @@ resource "aws_autoscaling_group" "bastion-asg" {
     version = "$Latest"
   }
 }
+
+# Same pattern repeated for nginx, wordpress, and tooling
+# wordpress and tooling ASGs use private subnets instead of public
 ```
 
-SNS notifications are configured to alert on launch, terminate, and error events across all four ASGs.
+Each ASG is then attached to its respective target group:
 
-![Auto Scaling Groups](./screenshots/asg.png)
+```hcl
+resource "aws_autoscaling_attachment" "asg_attachment_nginx" {
+  autoscaling_group_name = aws_autoscaling_group.nginx-asg.id
+  lb_target_group_arn    = aws_lb_target_group.nginx-tgt.arn
+}
+```
+
 
 **Code — Explanation**
 - `launch_template` → defines the AMI, instance type, security group, key pair, and startup script for instances the ASG creates.
@@ -554,7 +942,7 @@ SNS notifications are configured to alert on launch, terminate, and error events
 
 ---
 
-## Step 10 — Elastic File System
+## Step 11 — Elastic File System
 
 `efs.tf`
 
@@ -577,6 +965,11 @@ resource "aws_kms_key" "ACS-kms" {
   })
 }
 
+resource "aws_kms_alias" "alias" {
+  name          = "alias/acs-kms"
+  target_key_id = aws_kms_key.ACS-kms.key_id
+}
+
 resource "aws_efs_file_system" "ACS-efs" {
   encrypted  = true
   kms_key_id = aws_kms_key.ACS-kms.arn
@@ -590,6 +983,12 @@ resource "aws_efs_mount_target" "subnet-1" {
   security_groups = [aws_security_group.datalayer-sg.id]
 }
 
+resource "aws_efs_mount_target" "subnet-2" {
+  file_system_id  = aws_efs_file_system.ACS-efs.id
+  subnet_id       = aws_subnet.private[3].id
+  security_groups = [aws_security_group.datalayer-sg.id]
+}
+
 resource "aws_efs_access_point" "wordpress" {
   file_system_id = aws_efs_file_system.ACS-efs.id
 
@@ -600,19 +999,31 @@ resource "aws_efs_access_point" "wordpress" {
     creation_info { owner_gid = 0; owner_uid = 0; permissions = 0755 }
   }
 }
+
+resource "aws_efs_access_point" "tooling" {
+  file_system_id = aws_efs_file_system.ACS-efs.id
+
+  posix_user { gid = 0; uid = 0 }
+
+  root_directory {
+    path = "/tooling"
+    creation_info { owner_gid = 0; owner_uid = 0; permissions = 0755 }
+  }
+}
 ```
 
-![EFS](./screenshots/efs.png)
+<img width="1366" height="768" alt="efs" src="https://github.com/user-attachments/assets/d1d64c88-1c71-4177-8d17-09e7b5e3c60b" />
 
 **Code — Explanation**
 - `aws_kms_key` → creates a customer-managed encryption key. All data on EFS is encrypted at rest.
+- `aws_kms_alias` → gives the key a human-readable name for easier identification in the console.
 - `encrypted = true` + `kms_key_id` → links the EFS volume to the KMS key.
-- Mount targets are placed in private subnets 2 and 3 (the data layer), one per AZ for redundancy.
+- Two mount targets are created — one in private subnet 2 and one in private subnet 3 — one per AZ for redundancy.
 - Access points for WordPress and Tooling create isolated directories (`/wordpress`, `/tooling`) — each app mounts only its own path.
 
 ---
 
-## Step 11 — RDS Instance
+## Step 12 — RDS Instance
 
 `rds.tf`
 
@@ -641,17 +1052,17 @@ resource "aws_db_instance" "ACS-rds" {
 }
 ```
 
-![RDS](./screenshots/rds.png)
 
 **Code — Explanation**
 - `aws_db_subnet_group` → tells RDS which subnets it can use. Private subnets 2 and 3 keep the database in the data layer, unreachable from the internet.
 - `multi_az = true` → AWS provisions a standby replica in a second AZ and fails over automatically if the primary has issues.
 - `skip_final_snapshot = true` → allows `terraform destroy` to delete the instance without requiring a final backup snapshot.
 - `sensitive = true` on the password variable → Terraform never prints it in plan or apply output.
+- MySQL `8.0` and `db.t3.micro` are used instead of the guide's `5.7` and `db.t2.micro` — both are deprecated or unavailable in newer regions.
 
 ---
 
-## Step 12 — Variables and Outputs
+## Step 13 — Variables and Outputs
 
 `variables.tf` declares all input variables. `terraform.tfvars` provides the actual values and is excluded from version control via `.gitignore`.
 
@@ -671,17 +1082,40 @@ Key variables added in this project:
 
 ```hcl
 output "alb_dns_name" {
-  value = aws_lb.ext-alb.dns_name
+  description = "DNS name of the external Application Load Balancer"
+  value       = aws_lb.ext-alb.dns_name
+}
+
+output "alb_target_group_arn" {
+  description = "ARN of the Nginx target group"
+  value       = aws_lb_target_group.nginx-tgt.arn
+}
+
+output "vpc_id" {
+  description = "The ID of the main VPC"
+  value       = aws_vpc.main.id
+}
+
+output "public_subnet_ids" {
+  description = "IDs of the public subnets"
+  value       = aws_subnet.public[*].id
+}
+
+output "private_subnet_ids" {
+  description = "IDs of the private subnets"
+  value       = aws_subnet.private[*].id
 }
 
 output "nat_gateway_ip" {
-  value = aws_eip.nat_eip.public_ip
+  description = "Public IP of the NAT Gateway"
+  value       = aws_eip.nat_eip.public_ip
 }
 ```
 
+
 ---
 
-## Step 13 — Plan, Apply, Verify, Destroy
+## Step 14 — Plan, Apply, Verify, Destroy
 
 **Validate and plan:**
 
@@ -716,31 +1150,24 @@ Type `yes` when prompted. Apply takes 10–20 minutes — RDS and NAT Gateway ar
 | EFS | File system visible |
 | RDS | Instance visible |
 
-![Terraform Apply](./screenshots/terraform-apply.png)
+<img width="1366" height="768" alt="last plan" src="https://github.com/user-attachments/assets/51cc90e2-f7e2-45df-b427-5bba5db095aa" />
+<img width="1366" height="768" alt="infra created" src="https://github.com/user-attachments/assets/aa87bd9a-6924-4ad1-89de-9a8799688993" />
+<img width="1366" height="768" alt="vpc created" src="https://github.com/user-attachments/assets/8ef9cc41-89d0-4d47-b615-296f30f4b09e" />
+<img width="1366" height="768" alt="confirmed infra" src="https://github.com/user-attachments/assets/25acb142-9afc-429c-b38a-2683fe3acb93" />
+<img width="1366" height="768" alt="loadbalancers" src="https://github.com/user-attachments/assets/08193965-ba37-41a7-9019-47cb6e17506d" />
+<img width="1366" height="768" alt="subnets created" src="https://github.com/user-attachments/assets/bcfbdf7a-f5e4-427b-ba6c-8530516ff4d4" />
+
+
+
 
 **Destroy immediately after verification:**
 
 ```bash
 terraform destroy
 ```
+<img width="1366" height="768" alt="everything destroyed" src="https://github.com/user-attachments/assets/05262acc-45df-4251-918e-67392ca8b1ec" />
 
 NAT Gateways and RDS are not free-tier. Leaving them running accumulates charges quickly.
-
----
-
-## Key Concepts
-
-**AssumeRole Policy vs Role Policy**
-
-The trust policy (AssumeRole) answers *who can use this role* — here `ec2.amazonaws.com` is trusted to assume it. The permission policy answers *what the role can do* — here `ec2:Describe*`. Both must exist: one without the other means either nobody can assume the role, or whoever does gets no permissions.
-
-**OSI Model and TCP/IP**
-
-The OSI model has 7 layers from Physical to Application. The TCP/IP suite maps these into 4: Network Access, Internet, Transport, Application. In this project's architecture, the ALBs operate at Layer 7, routing decisions use IP (Layer 3), and application communication uses TCP (Layer 4) on ports 443, 3306, and 2049.
-
-**Networking Concepts**
-
-CIDR notation (`172.16.0.0/16`) defines a range of IP addresses — the `/16` means 65,536 possible addresses. `cidrsubnet()` carves these into smaller blocks per subnet. Public subnets route outbound traffic through the Internet Gateway; private subnets route through the NAT Gateway, enabling outbound-only internet access without exposing instances to inbound connections.
 
 ---
 
