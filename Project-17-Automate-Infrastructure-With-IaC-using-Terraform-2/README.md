@@ -375,9 +375,7 @@ resource "aws_iam_instance_profile" "ip" {
 
 ## Step 6 — Security Groups
 
-
-
-
+```
 resource "aws_security_group" "ext-alb-sg" {
   name        = "ext-alb-sg"
   vpc_id      = aws_vpc.main.id
@@ -591,7 +589,7 @@ resource "aws_security_group_rule" "inbound-mysql-webserver" {
 }
 ```
 
-![Security Groups](./screenshots/security-groups.png)
+<img width="1366" height="768" alt="added securitytf" src="https://github.com/user-attachments/assets/4c56c25f-ef00-4bde-aac3-58e3f357acb7" />
 
 **Code — Explanation**
 - `source_security_group_id` → allows traffic from any resource in the referenced security group instead of a hardcoded IP range.
