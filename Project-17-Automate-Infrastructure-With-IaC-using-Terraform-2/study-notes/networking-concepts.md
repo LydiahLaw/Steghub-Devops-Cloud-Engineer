@@ -4,11 +4,11 @@
 
 Every device that connects to a network needs an identifier — that identifier is an IP address. Think of it the way you think of a postal address: without one, there is no way to know where to send data or where it came from.
 
-The version most infrastructure still runs on is IPv4. An IPv4 address is a 32-bit number written as four groups of digits separated by dots — for example `192.168.1.10`. Each group (called an octet) can be any value from 0 to 255. That gives roughly 4.3 billion possible addresses, which sounds like a lot until you consider there are more internet-connected devices than that today. This is part of why IPv6 was introduced, using 128-bit addresses, though IPv4 remains dominant in most cloud infrastructure including AWS.
+The version most infrastructure still runs on is IPv4. An IPv4 address is a 32-bit number written as four groups of digits separated by dots for example `192.168.1.10`. Each group (called an octet) can be any value from 0 to 255. That gives roughly 4.3 billion possible addresses, which sounds like a lot until you consider there are more internet-connected devices than that today. This is part of why IPv6 was introduced, using 128-bit addresses, though IPv4 remains dominant in most cloud infrastructure including AWS.
 
 IP addresses come in two scopes:
 
-**Public IP addresses** are globally routable — any device on the internet can send traffic to them. When you access a website, your request reaches a server at its public IP.
+**Public IP addresses** are globally routable any device on the internet can send traffic to them. When you access a website, your request reaches a server at its public IP.
 
 **Private IP addresses** exist only within a local network and are not directly reachable from the internet. AWS uses private IPs inside VPCs. The reserved private ranges are:
 - `10.0.0.0 – 10.255.255.255`
@@ -27,7 +27,7 @@ In AWS, a VPC is your private network. Subnets are how you divide it. The most i
 
 **Public subnets** have a route to an Internet Gateway, which means resources placed in them (with a public IP) can communicate directly with the internet. Load balancers and bastion hosts typically live here.
 
-**Private subnets** have no direct route to the internet. Resources here — like application servers, databases, and file systems — are isolated from inbound internet traffic. They can still reach the internet for outbound requests (like downloading updates) through a NAT Gateway, but nothing from the internet can initiate a connection to them.
+**Private subnets** have no direct route to the internet. Resources here like application servers, databases, and file systems — are isolated from inbound internet traffic. They can still reach the internet for outbound requests (like downloading updates) through a NAT Gateway, but nothing from the internet can initiate a connection to them.
 
 This separation is a core security principle. Even if an attacker compromised your load balancer, they still cannot directly reach your database because it sits in a private subnet with no inbound path from the internet.
 
@@ -63,7 +63,7 @@ The practical rule: a smaller prefix number means a larger network (more IPs). A
 
 ## IP Routing
 
-Routing is the process of deciding where network traffic should go next. Every network — including your AWS VPC — uses a route table to make this decision.
+Routing is the process of deciding where network traffic should go next. Every network — including your AWS VPC uses a route table to make this decision.
 
 A route table is a list of rules. Each rule says: "if the destination IP matches this range, send the traffic to this target." When a packet arrives, the router checks the destination IP against the rules from most specific to least specific, and forwards accordingly.
 
@@ -109,6 +109,5 @@ NAT is the mechanism that allows devices with private IP addresses to communicat
 
 **NAT Gateway vs NAT Instance:** AWS offers NAT Gateway (a fully managed service) and NAT Instance (an EC2 you manage yourself). NAT Gateway is the standard choice — it scales automatically, is highly available within an AZ, and requires no patching.
 
-**Cost note:** NAT Gateway is not free tier. It charges per hour (~$0.045/hr) and per GB of data processed. This is why you destroy infrastructure immediately after verifying it in learning environments.
 
 **The architecture rule:** NAT Gateway lives in a public subnet (it needs an outbound internet path) but serves private subnets. Private instances route their internet-bound traffic to it. It is a one-way door — outbound works, inbound does not.
