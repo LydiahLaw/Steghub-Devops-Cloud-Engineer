@@ -1,7 +1,7 @@
 # RDS Subnet Group — tells RDS which subnets it can use
 resource "aws_db_subnet_group" "ACS-rds" {
   name       = "acs-rds"
-  subnet_ids = [aws_subnet.private[2].id, aws_subnet.private[3].id]
+  subnet_ids = [var.private_subnets[0], var.private_subnets[1]]
 
   tags = merge(
     var.tags,
@@ -19,11 +19,11 @@ resource "aws_db_instance" "ACS-rds" {
   engine_version         = "8.0"
   instance_class         = "db.t3.micro"
   db_name                = "acsdb"
-  username               = var.master-username
-  password               = var.master-password
+  username               = var.master_username
+  password               = var.master_password
   parameter_group_name   = "default.mysql8.0"
   db_subnet_group_name   = aws_db_subnet_group.ACS-rds.name
   skip_final_snapshot    = true
-  vpc_security_group_ids = [aws_security_group.datalayer-sg.id]
+  vpc_security_group_ids = [var.datalayer_sg]
   multi_az               = true
 }

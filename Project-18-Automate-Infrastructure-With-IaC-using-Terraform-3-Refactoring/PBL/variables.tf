@@ -58,12 +58,12 @@ variable "account_no" {
   description = "Your AWS account number"
 }
 
-variable "master-username" {
+variable "master_username" {
   type        = string
   description = "RDS admin username"
 }
 
-variable "master-password" {
+variable "master_password" {
   type        = string
   description = "RDS admin password"
   sensitive   = true

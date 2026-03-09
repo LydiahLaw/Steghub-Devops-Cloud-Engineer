@@ -3,12 +3,12 @@ resource "aws_lb" "ext-alb" {
   name     = "ext-alb"
   internal = false
   security_groups = [
-    aws_security_group.ext-alb-sg.id,
+    var.ALB_sg,
   ]
 
   subnets = [
-    aws_subnet.public[0].id,
-    aws_subnet.public[1].id
+    var.public_subnets[0],
+    var.public_subnets[1]
   ]
 
   tags = merge(
@@ -37,7 +37,7 @@ resource "aws_lb_target_group" "nginx-tgt" {
   port        = 443
   protocol    = "HTTPS"
   target_type = "instance"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 }
 
 # External ALB listener — forwards HTTPS traffic to Nginx
@@ -58,12 +58,12 @@ resource "aws_lb" "ialb" {
   name     = "ialb"
   internal = true
   security_groups = [
-    aws_security_group.int-alb-sg.id,
+    var.internal_alb_sg,
   ]
 
   subnets = [
-    aws_subnet.private[0].id,
-    aws_subnet.private[1].id
+    var.private_subnets[0],
+    var.private_subnets[1]
   ]
 
   tags = merge(
@@ -92,7 +92,7 @@ resource "aws_lb_target_group" "wordpress-tgt" {
   port        = 443
   protocol    = "HTTPS"
   target_type = "instance"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 }
 
 # Target group for Tooling
@@ -110,7 +110,7 @@ resource "aws_lb_target_group" "tooling-tgt" {
   port        = 443
   protocol    = "HTTPS"
   target_type = "instance"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 }
 
 # Internal ALB listener — default action forwards to WordPress
@@ -142,3 +142,31 @@ resource "aws_lb_listener_rule" "tooling-listener" {
     }
   }
 }
+
+resource "tls_private_key" "self_signed" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+resource "tls_self_signed_cert" "self_signed" {
+  private_key_pem = tls_private_key.self_signed.private_key_pem
+
+  subject {
+    common_name  = "example.com"
+    organization = "ACS Dev"
+  }
+
+  validity_period_hours = 8760
+
+  allowed_uses = [
+    "key_encipherment",
+    "digital_signature",
+    "server_auth",
+  ]
+}
+
+resource "aws_acm_certificate" "self_signed" {
+  private_key      = tls_private_key.self_signed.private_key_pem
+  certificate_body = tls_self_signed_cert.self_signed.cert_pem
+}
+

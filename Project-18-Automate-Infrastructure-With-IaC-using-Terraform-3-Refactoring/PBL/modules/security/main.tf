@@ -1,7 +1,7 @@
 # External ALB — allows HTTP (80) and HTTPS (443) from anywhere
 resource "aws_security_group" "ext-alb-sg" {
   name        = "ext-alb-sg"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
   description = "Allow HTTP and HTTPS inbound traffic"
 
   ingress {
@@ -38,7 +38,7 @@ resource "aws_security_group" "ext-alb-sg" {
 # Bastion host — allows SSH from anywhere
 resource "aws_security_group" "bastion_sg" {
   name        = "bastion_sg"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
   description = "Allow SSH inbound for bastion host"
 
   ingress {
@@ -67,7 +67,7 @@ resource "aws_security_group" "bastion_sg" {
 # Nginx reverse proxy — ingress rules added separately via aws_security_group_rule
 resource "aws_security_group" "nginx-sg" {
   name   = "nginx-sg"
-  vpc_id = aws_vpc.main.id
+  vpc_id = var.vpc_id
 
   egress {
     from_port   = 0
@@ -107,7 +107,7 @@ resource "aws_security_group_rule" "inbound-bastion-ssh" {
 # Internal ALB — only Nginx can send traffic to it
 resource "aws_security_group" "int-alb-sg" {
   name   = "int-alb-sg"
-  vpc_id = aws_vpc.main.id
+  vpc_id = var.vpc_id
 
   egress {
     from_port   = 0
@@ -137,7 +137,7 @@ resource "aws_security_group_rule" "inbound-ialb-https" {
 # Webservers — only Internal ALB and Bastion can reach them
 resource "aws_security_group" "webserver-sg" {
   name   = "webserver-sg"
-  vpc_id = aws_vpc.main.id
+  vpc_id = var.vpc_id
 
   egress {
     from_port   = 0
@@ -177,7 +177,7 @@ resource "aws_security_group_rule" "inbound-web-ssh" {
 # Datalayer — for RDS and EFS
 resource "aws_security_group" "datalayer-sg" {
   name   = "datalayer-sg"
-  vpc_id = aws_vpc.main.id
+  vpc_id = var.vpc_id
 
   egress {
     from_port   = 0

@@ -40,15 +40,15 @@ resource "aws_efs_file_system" "ACS-efs" {
 # Mount target in private subnet 2 (data layer)
 resource "aws_efs_mount_target" "subnet-1" {
   file_system_id  = aws_efs_file_system.ACS-efs.id
-  subnet_id       = aws_subnet.private[2].id
-  security_groups = [aws_security_group.datalayer-sg.id]
+  subnet_id       = var.subnet_ids[0]
+  security_groups = [var.security_group]
 }
 
 # Mount target in private subnet 3 (data layer)
 resource "aws_efs_mount_target" "subnet-2" {
   file_system_id  = aws_efs_file_system.ACS-efs.id
-  subnet_id       = aws_subnet.private[3].id
-  security_groups = [aws_security_group.datalayer-sg.id]
+  subnet_id       = var.subnet_ids[1]
+  security_groups = [var.security_group]
 }
 
 # Access point for WordPress
