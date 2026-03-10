@@ -557,6 +557,6 @@ Moving state to S3 with DynamoDB locking removes the single biggest blocker to t
 
 Project 19 will address the remaining gap — configuring the actual application layer using Packer and Ansible so the deployed infrastructure serves real traffic.
 
-**Author:** Lydiah Nganga
-**Date:** March 10, 2025
-**Program:** StegHub DevOps/Cloud Engineering Apprenticeship
+> **Author:** Lydiah Nganga  
+> **Date:** March 10, 2026  
+> **Program:** StegHub DevOps/Cloud Engineering Apprenticeship
