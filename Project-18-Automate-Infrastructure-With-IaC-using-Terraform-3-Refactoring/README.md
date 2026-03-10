@@ -21,10 +21,11 @@
    - [RDS Module](#rds-module)
    - [Compute Module](#compute-module)
 8. [Root Configuration](#root-configuration)
-9. [Key Decisions and Deviations](#key-decisions-and-deviations)
-10. [How to Use](#how-to-use)
-11. [Blockers and Known Limitations](#blockers-and-known-limitations)
-12. [Conclusion](#conclusion)
+9. [Verification and Pro Tips](#verification-and-pro-tips)
+10. [Key Decisions and Deviations](#key-decisions-and-deviations)
+11. [How to Use](#how-to-use)
+12. [Blockers and Known Limitations](#blockers-and-known-limitations)
+13. [Conclusion](#conclusion)
 
 ---
 
