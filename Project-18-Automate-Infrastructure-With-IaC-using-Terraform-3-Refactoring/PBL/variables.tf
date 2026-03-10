@@ -68,3 +68,13 @@ variable "master_password" {
   description = "RDS admin password"
   sensitive   = true
 }
+
+variable "images" {
+  type        = map(string)
+  description = "AMI IDs per region"
+  default = {
+    eu-central-1 = "ami-0c42fad2ea005202d"
+    us-east-1    = "ami-0c55b159cbfafe1f0"
+    us-west-2    = "ami-0fcf52bcf5db7b003"
+  }
+}

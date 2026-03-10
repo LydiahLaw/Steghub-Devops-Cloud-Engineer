@@ -4,20 +4,15 @@ resource "aws_security_group" "ext-alb-sg" {
   vpc_id      = var.vpc_id
   description = "Allow HTTP and HTTPS inbound traffic"
 
-  ingress {
-    description = "HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  dynamic "ingress" {
+    for_each = var.ext_alb_ingress_rules
+    content {
+      description = ingress.value.description
+      from_port   = ingress.value.from_port
+      to_port     = ingress.value.to_port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
+    }
   }
 
   egress {
@@ -27,12 +22,7 @@ resource "aws_security_group" "ext-alb-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(
-    var.tags,
-    {
-      Name = "ext-alb-sg"
-    },
-  )
+  tags = merge(var.tags, { Name = "ext-alb-sg" })
 }
 
 # Bastion host — allows SSH from anywhere
@@ -41,12 +31,15 @@ resource "aws_security_group" "bastion_sg" {
   vpc_id      = var.vpc_id
   description = "Allow SSH inbound for bastion host"
 
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  dynamic "ingress" {
+    for_each = var.bastion_ingress_rules
+    content {
+      description = ingress.value.description
+      from_port   = ingress.value.from_port
+      to_port     = ingress.value.to_port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
+    }
   }
 
   egress {
@@ -56,12 +49,7 @@ resource "aws_security_group" "bastion_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(
-    var.tags,
-    {
-      Name = "Bastion-SG"
-    },
-  )
+  tags = merge(var.tags, { Name = "Bastion-SG" })
 }
 
 # Nginx reverse proxy — ingress rules added separately via aws_security_group_rule
@@ -76,12 +64,7 @@ resource "aws_security_group" "nginx-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(
-    var.tags,
-    {
-      Name = "nginx-SG"
-    },
-  )
+  tags = merge(var.tags, { Name = "nginx-SG" })
 }
 
 # Allow HTTPS from the external ALB to Nginx
@@ -116,12 +99,7 @@ resource "aws_security_group" "int-alb-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(
-    var.tags,
-    {
-      Name = "int-alb-sg"
-    },
-  )
+  tags = merge(var.tags, { Name = "int-alb-sg" })
 }
 
 # Allow HTTPS from Nginx to Internal ALB
@@ -146,12 +124,7 @@ resource "aws_security_group" "webserver-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(
-    var.tags,
-    {
-      Name = "webserver-sg"
-    },
-  )
+  tags = merge(var.tags, { Name = "webserver-sg" })
 }
 
 # Allow HTTPS from Internal ALB to webservers
@@ -186,12 +159,7 @@ resource "aws_security_group" "datalayer-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(
-    var.tags,
-    {
-      Name = "datalayer-sg"
-    },
-  )
+  tags = merge(var.tags, { Name = "datalayer-sg" })
 }
 
 # Allow NFS port 2049 from webservers — for EFS

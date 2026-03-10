@@ -53,7 +53,7 @@ module "ALB" {
 
 module "autoscaling" {
   source             = "./modules/autoscaling"
-  ami                = var.ami
+  ami                = lookup(var.images, var.region, var.ami)
   keypair            = var.keypair
   bastion_sg         = module.security.bastion_sg
   nginx_sg           = module.security.nginx_sg
