@@ -1,4 +1,4 @@
-# Project 18 — Automate Infrastructure With IaC Using Terraform Part 3 (Refactoring)
+# Automate Infrastructure With IaC Using Terraform Part 3 (Refactoring)
 
 ## Table of Contents
 
@@ -134,6 +134,9 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 
 `prevent_destroy = true` protects the bucket from accidental deletion via `terraform destroy` — since the bucket holds the state file, losing it would mean losing all knowledge of what Terraform has provisioned.
 
+<img width="1366" height="768" alt="s3 bucket being create" src="https://github.com/user-attachments/assets/4bebf61e-71f4-46f0-83dc-695e1ee0a043" />
+
+
 ### DynamoDB state locking
 
 ```hcl
@@ -150,6 +153,8 @@ resource "aws_dynamodb_table" "terraform_locks" {
 ```
 
 When any Terraform operation that writes state begins, it creates a `LockID` entry in this table. Any other operation attempting to run simultaneously will see the lock and wait. The lock is released when the operation completes.
+<img width="1366" height="768" alt="dynamodb created" src="https://github.com/user-attachments/assets/284f816f-cd58-4656-89a6-47a279822f99" />
+
 
 ### Backend configuration
 
@@ -173,6 +178,7 @@ terraform {
 ```
 
 After migration, the local `terraform.tfstate` file is empty. The real state lives in S3 at `global/s3/terraform.tfstate`.
+<img width="1366" height="768" alt="object created" src="https://github.com/user-attachments/assets/f43ca16a-def7-48e6-8c1e-5caf2c7c7c91" />
 
 ---
 
@@ -214,6 +220,7 @@ dynamic "ingress" {
   }
 }
 ```
+<img width="1366" height="768" alt="dynamic" src="https://github.com/user-attachments/assets/ecb27be1-f8f9-4de3-8f3d-2505cbfe6b75" />
 
 The rules are defined as a list of objects in `modules/security/variables.tf`:
 
@@ -246,6 +253,8 @@ variable "ext_alb_ingress_rules" {
 ```
 
 Adding a new port in future only requires a new entry in the variable list — the resource block itself does not change.
+<img width="1366" height="768" alt="dynamic added in variables" src="https://github.com/user-attachments/assets/6f519879-b306-4349-9ca6-fc388c6e208b" />
+
 
 ### EC2 AMI Selection with Map and Lookup
 
@@ -264,6 +273,8 @@ variable "images" {
   }
 }
 ```
+<img width="1366" height="768" alt="ami added in variables" src="https://github.com/user-attachments/assets/9a5da641-4fc1-4578-8fde-fa4f8cf13c63" />
+
 
 The `lookup()` function selects the correct AMI based on the current region, with `var.ami` as a fallback:
 
@@ -272,6 +283,8 @@ ami = lookup(var.images, var.region, var.ami)
 ```
 
 `lookup(map, key, default)` — if `var.region` exists as a key in `var.images`, use that value. If not, fall back to `var.ami`.
+<img width="1366" height="768" alt="autoscaling module chnaged" src="https://github.com/user-attachments/assets/62b3c301-6351-41f4-8198-dcbfe3b2fe45" />
+
 
 ### Conditional Expressions
 
@@ -352,6 +365,9 @@ The root `main.tf` contains only `module` blocks — no resource blocks. All res
 
 The `availability_zones` variable receives `data.aws_availability_zones.available.names` from the root — data sources live at root level and are passed into modules as variables rather than called inside modules.
 
+<img width="1366" height="768" alt="vpc variables" src="https://github.com/user-attachments/assets/a966c275-a181-4004-8b73-094008d3aa83" />
+
+
 ### Security Module
 
 **Contains:** All 6 `aws_security_group` resources and all `aws_security_group_rule` resources
@@ -361,6 +377,7 @@ The `availability_zones` variable receives `data.aws_availability_zones.availabl
 **Key input variables:** `vpc_id`, `tags`, `ext_alb_ingress_rules`, `bastion_ingress_rules`
 
 **Outputs:** `ALB_sg`, `bastion_sg`, `nginx_sg`, `internal_alb_sg`, `webserver_sg`, `datalayer_sg`
+<img width="1366" height="768" alt="moved sectf to securitymodules" src="https://github.com/user-attachments/assets/fd5c279a-7273-47df-98dc-4f8a37947fc1" />
 
 ### ALB Module
 
@@ -369,6 +386,7 @@ The `availability_zones` variable receives `data.aws_availability_zones.availabl
 **Key input variables:** `vpc_id`, `public_subnets`, `private_subnets`, `ALB_sg`, `internal_alb_sg`, `tags`
 
 **Outputs:** `alb_dns_name`, `alb_target_group_arn`, `wordpress_tgt_arn`, `tooling_tgt_arn`, `ext_alb_arn`, `int_alb_arn`
+<img width="1366" height="768" alt="ALBmaintf" src="https://github.com/user-attachments/assets/515765bd-1283-48f6-8978-fefa1b8b168d" />
 
 ### Autoscaling Module
 
@@ -377,6 +395,7 @@ The `availability_zones` variable receives `data.aws_availability_zones.availabl
 **Key input variables:** `ami`, `keypair`, `bastion_sg`, `nginx_sg`, `webserver_sg`, `public_subnets`, `private_subnets`, `nginx_alb_tgt`, `wordpress_alb_tgt`, `tooling_alb_tgt`, `instance_profile`, `availability_zones`, `tags`
 
 Shell scripts (`bastion.sh`, `nginx.sh`, `wordpress.sh`, `tooling.sh`) are copied into this module directory so `filebase64("${path.module}/script.sh")` resolves correctly within the module context.
+<img width="1366" height="768" alt="copied script files to autoscaling" src="https://github.com/user-attachments/assets/fe4f8629-815c-4f8f-8bfd-f7595b60e8a4" />
 
 ### EFS Module
 
@@ -385,6 +404,8 @@ Shell scripts (`bastion.sh`, `nginx.sh`, `wordpress.sh`, `tooling.sh`) are copie
 **Key input variables:** `subnet_ids`, `security_group`, `account_no`, `tags`
 
 **Outputs:** `efs_id`, `efs_dns`
+<img width="1366" height="768" alt="Screenshot (1583)" src="https://github.com/user-attachments/assets/0559ce85-bd81-4029-9e84-12c349a673be" />
+
 
 ### RDS Module
 
@@ -414,6 +435,41 @@ No standalone EC2 instances exist in this project — all compute is managed via
 | `roles.tf` | IAM role, policy, attachment, and instance profile (stays at root) |
 
 ---
+
+## Verification and Pro Tips
+
+### Validate and format before applying
+
+Always run these before `terraform plan`:
+```bash
+# Check for syntax errors and internal consistency
+terraform validate
+
+# Apply canonical formatting to all files including modules
+terraform fmt -recursive
+
+# Lint for best practice violations
+tflint --recursive
+```
+
+### Confirm the plan before applying
+```bash
+terraform plan
+```
+
+Review the summary line — it should show resources to add with 0 unexpected destroys. Only proceed to apply when the plan matches your intent.
+
+### Apply and verify in AWS Console
+```bash
+terraform apply
+```
+
+After apply completes, confirm the following in the AWS Console:
+<img width="1366" height="768" alt="vpc confirmed" src="https://github.com/user-attachments/assets/18e5ac16-dbdd-49eb-9e96-3edd28f77149" />
+<img width="1366" height="768" alt="loadbalancers creaeted" src="https://github.com/user-attachments/assets/93b95a15-f65c-4f1d-bc90-37424d8c467a" />
+<img width="1366" height="768" alt="targetgroups" src="https://github.com/user-attachments/assets/dd4b6219-f7b8-49ea-bb22-6fbe8ae1596f" />
+<img width="1366" height="768" alt="autoscaling groups" src="https://github.com/user-attachments/assets/1c0edd43-82da-4b4e-89ed-2dffbf0da359" />
+
 
 ## Key Decisions and Deviations
 
@@ -490,16 +546,16 @@ terraform destroy \
 
 **Userdata scripts are not functional** — The `bastion.sh`, `nginx.sh`, `wordpress.sh`, and `tooling.sh` scripts passed to launch templates via `user_data` do not contain the actual EFS DNS endpoints, ALB DNS names, or RDS endpoints. These values are only known after `terraform apply` completes, creating a chicken-and-egg problem. The websites will not be reachable after deployment.
 
-This is resolved in Project 19 using Packer to build pre-configured AMIs and Ansible to configure instances after provisioning, at which point the actual endpoint values are available.
-
-**Self-signed certificate browser warning** — Browsers will show a security warning when accessing the ALBs because the certificate is self-signed, not issued by a trusted CA. This is acceptable for a learning environment with no registered domain.
-
 ---
 
 ## Conclusion
 
-This project demonstrates the progression from functional-but-messy Terraform code to production-grade IaC structure. The key shift is treating infrastructure code the same way you treat application code — modular, reusable, and maintainable by a team rather than a single person.
+This project demonstrates the progression from functional-but-messy Terraform code to production-grade IaC structure. The key shift is treating infrastructure code the same way you treat application code; modular, reusable, and maintainable by a team rather than a single person.
 
 Moving state to S3 with DynamoDB locking removes the single biggest blocker to team collaboration in Terraform. The module refactoring means a new engineer can understand the entire codebase by reading seven focused `main.tf` files instead of one sprawling collection of flat files. The dynamic blocks and lookup functions reduce the surface area for mistakes when the infrastructure needs to change.
 
 Project 19 will address the remaining gap — configuring the actual application layer using Packer and Ansible so the deployed infrastructure serves real traffic.
+
+**Author:** Lydiah Nganga
+**Date:** March 10, 2025
+**Program:** StegHub DevOps/Cloud Engineering Apprenticeship
