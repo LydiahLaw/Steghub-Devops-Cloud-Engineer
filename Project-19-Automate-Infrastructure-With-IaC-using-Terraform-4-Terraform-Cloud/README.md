@@ -88,6 +88,9 @@ Each shell script installs the software that server type needs:
 - **wordpress.sh** — base packages, httpd, PHP with mysql and fpm modules
 - **tooling.sh** — same as wordpress
 
+<img width="1366" height="768" alt="amibuild" src="https://github.com/user-attachments/assets/e130a704-b1f5-411d-b0a2-5ac01ba18e70" />
+
+
 Build all four AMIs in one command from the `AMI/` directory:
 
 ```bash
@@ -96,12 +99,15 @@ packer build .
 ```
 
 Packer spins up a temporary `t2.micro` EC2 per template, runs the shell script, snapshots it into an AMI, and terminates the instance. The four AMI IDs printed at the end go into Terraform Cloud as workspace variables.
+<img width="1366" height="768" alt="amiconfirmed" src="https://github.com/user-attachments/assets/0a1ad9f1-1910-42cf-a012-f2491108b7ad" />
+
 
 ## Phase 2: Terraform Cloud setup
 
 ### Create an organisation
 
 After creating a Terraform Cloud account at app.terraform.io, select **Start from scratch** and create an organisation. This project uses the organisation `Lydiah-devops`.
+<img width="1366" height="768" alt="create org" src="https://github.com/user-attachments/assets/bbffb86e-95c8-4295-b977-73db5137140f" />
 
 ### Create workspaces
 
@@ -112,11 +118,17 @@ Three workspaces are created, one per environment. For each:
 3. Under **Advanced options**, set the VCS branch to match the environment
 4. Name the workspace and click **Create workspace**
 
+<img width="1366" height="768" alt="ceate new workspace" src="https://github.com/user-attachments/assets/e0c08364-28af-4668-b03d-55d8430eb5e4" />
+
+
 | Workspace | Branch | Apply behaviour |
 |-----------|--------|-----------------|
 | `terraform-cloud-dev` | `dev` | Auto-apply on push |
 | `terraform-cloud-test` | `test` | Manual approval required |
 | `terraform-cloud-prod` | `prod` | Manual approval required |
+
+<img width="1366" height="768" alt="branches created" src="https://github.com/user-attachments/assets/9fc54942-83a1-4efd-a77a-b8525c6faeaa" />
+
 
 Auto-apply is enabled only for `dev` under **Settings → General → Apply Method**. Pushing to `dev` triggers plan and apply automatically. Pushing to `test` or `prod` triggers a plan but requires operator approval before apply.
 
@@ -144,6 +156,9 @@ Since `terraform.tfvars` is gitignored and never reaches Terraform Cloud, all va
 | `ami_nginx` | No |
 | `ami_wordpress` | No |
 | `ami_tooling` | No |
+
+<img width="1366" height="768" alt="addedvariables" src="https://github.com/user-attachments/assets/f6b98d00-4c41-41e8-ba3c-92e49be2842b" />
+
 
 ### Migrate the backend
 
@@ -176,6 +191,8 @@ For workspaces with manual apply, click on the active run → **Confirm and appl
 To trigger a run manually without a push: **New run → Plan and apply → Start run**.
 
 To destroy from Terraform Cloud: **Settings → Destruction and Deletion → Queue destroy plan**.
+<img width="1366" height="768" alt="Screenshot (1652)" src="https://github.com/user-attachments/assets/75dc95bd-a8d9-4c34-b8b7-7dfbe648823a" />
+
 
 ### Email notifications
 
@@ -185,6 +202,7 @@ In each workspace → **Settings → Notifications → Create a notification**:
 - Enter your email address
 - Select events: **Plan errored**, **Run errored**, **Apply errored**, **Plan complete**
 - Click **Create notification**
+<img width="1366" height="768" alt="email not" src="https://github.com/user-attachments/assets/ff79e9a8-ef77-4780-a629-b83493c5c068" />
 
 ## Phase 3: Environment branches
 
@@ -194,12 +212,18 @@ git checkout main && git checkout -b test && git push origin test
 git checkout main && git checkout -b prod && git push origin prod
 git checkout dev
 ```
+<img width="1366" height="768" alt="dev branch" src="https://github.com/user-attachments/assets/f04c06a5-a5fa-49e4-875b-4b63da30d5db" />
+
 
 On each branch, update `backend.tf` to point to the correct workspace name before pushing.
 
 ## Phase 4: AMI variable changes
 
 Each server type now has its own AMI variable rather than the single `var.ami` used in previous projects. The autoscaling module's launch templates reference `var.ami_bastion`, `var.ami_nginx`, `var.ami_wordpress`, and `var.ami_tooling` respectively. This was updated in both `modules/autoscaling/variables.tf` and `modules/autoscaling/main.tf`.
+<img width="1366" height="768" alt="amis added in variables" src="https://github.com/user-attachments/assets/a1fd1c45-2609-474c-9907-ffda9bfc6cf7" />
+
+<img width="1366" height="768" alt="amis aded on autoscaling" src="https://github.com/user-attachments/assets/0b12a4ce-b1fb-40ce-87cf-be6ae567208f" />
+
 
 ## Phase 5: Ansible post-provisioning
 
@@ -214,6 +238,7 @@ Collect Terraform outputs after apply:
 ```bash
 terraform output
 ```
+<img width="1366" height="768" alt="terraform output" src="https://github.com/user-attachments/assets/ab6e2376-e974-47da-b7c6-39794fc85999" />
 
 The inventory uses ProxyJump through the bastion to reach private instances:
 
@@ -259,6 +284,7 @@ PLAY [Configure Tooling servers]
 TASK [tooling : Ensure httpd is running] ............. ok
 TASK [tooling : Ensure PHP-FPM is running] ........... ok
 ```
+<img width="1366" height="768" alt="ansible playbook working" src="https://github.com/user-attachments/assets/9701faba-a640-4e49-9138-a2edb9c7662a" />
 
 ## Practice Task 1: Environment configuration
 
@@ -269,6 +295,8 @@ Three workspaces configured in Terraform Cloud with separate state, variables, a
 A reusable compute module was published to Terraform Cloud's Private Registry. The module follows the required naming convention `terraform-<PROVIDER>-<MODULE_NAME>`:
 
 **Module repo:** `terraform-aws-compute`
+<img width="1366" height="768" alt="terraform compute" src="https://github.com/user-attachments/assets/bb73c73f-dbe4-4a27-ae08-308348370170" />
+
 
 The module wraps `aws_instance` with configurable AMI, instance type, name, and tags. It is versioned with git tags (`v1.0.0`) which Terraform Cloud uses to manage module versions in the registry.
 
@@ -287,6 +315,8 @@ module "compute" {
   tags          = var.tags
 }
 ```
+<img width="1366" height="768" alt="module test" src="https://github.com/user-attachments/assets/578b9a2f-afa5-4bfe-a8f7-e7dfe10d556e" />
+
 
 A dedicated workspace (`terraform-module-test`) was created for the consumer configuration, connected to the `terraform-module-test` repo. Infrastructure was deployed, verified in AWS Console, then destroyed.
 
@@ -310,3 +340,10 @@ ansible all -i inventories/aws/hosts -m raw -a "sudo yum install -y python3.11" 
 AWS Console → EC2 → AMIs → select owned AMIs → Deregister
 AWS Console → EC2 → Snapshots → delete associated snapshots
 ```
+## Conclusion
+
+This project completes the Terraform maturity progression that started with flat `.tf` files in Project 16, through a full multi-tier architecture in Project 17, module refactoring in Project 18, and now remote execution and team workflows in Project 19. The shift to Terraform Cloud moves infrastructure management from a local machine dependency to a centralised, auditable system where every plan and apply is logged, state is managed remotely, and runs are triggered automatically from version control.
+
+Packer solves a real limitation of the userdata script approach scripts run at boot every time an instance launches, adding startup latency and creating a window where the instance is live but not yet configured. Baked AMIs eliminate that window entirely. Ansible bridges the gap between what Packer can pre-install and what can only be known at runtime, keeping configuration flexible without sacrificing repeatability.
+
+The combination of Terraform Cloud for provisioning, Packer for image builds, and Ansible for configuration management reflects how production DevOps teams actually manage infrastructure at scale.
