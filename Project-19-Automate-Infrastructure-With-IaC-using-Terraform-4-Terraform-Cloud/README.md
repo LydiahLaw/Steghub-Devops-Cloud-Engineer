@@ -349,7 +349,3 @@ This project completes the Terraform maturity progression that started with flat
 Packer solves a real limitation of the userdata script approach scripts run at boot every time an instance launches, adding startup latency and creating a window where the instance is live but not yet configured. Baked AMIs eliminate that window entirely. Ansible bridges the gap between what Packer can pre-install and what can only be known at runtime, keeping configuration flexible without sacrificing repeatability.
 
 The combination of Terraform Cloud for provisioning, Packer for image builds, and Ansible for configuration management reflects how production DevOps teams actually manage infrastructure at scale.
-
-## Related repositories
-
-Private module registry and reusable Terraform components: [Terraform-Cloud](https://github.com/LydiahLaw/Terraform-Cloud)
