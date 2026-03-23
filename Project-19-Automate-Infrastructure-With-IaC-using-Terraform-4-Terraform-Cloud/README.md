@@ -2,6 +2,8 @@
 
 This project builds on the modular Terraform architecture from the previous project by migrating infrastructure management to Terraform Cloud, introducing Packer for custom AMI builds, and using Ansible for post-provisioning configuration.
 
+> Private module registry and reusable Terraform components: [Terraform-Cloud](https://github.com/LydiahLaw/Terraform-Cloud)
+
 ## Architecture overview
 
 The infrastructure is the same multi-tier AWS setup from the previous project — VPC, public and private subnets, external and internal ALBs, autoscaling groups for bastion, nginx, wordpress and tooling, EFS with access points per application, and RDS MySQL 8.0. What changed is how it gets built and managed:
