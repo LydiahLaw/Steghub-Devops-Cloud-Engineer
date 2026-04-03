@@ -1,21 +1,46 @@
-# project 20 — migration to the cloud with containerization (docker & docker compose)
+# Migration to the Cloud with Containerization (Docker & Docker Compose)
 
-**StegHub DevOps Cloud Engineer apprenticeship — project 20**
+## Table of Contents
+- [Introduction](#introduction)
+- [Project Repositories](#project-repositories)
+- [What Was Built](#what-was-built)
+  - [MySQL in a Container](#mysql-in-a-container)
+  - [Containerizing the Tooling App](#containerizing-the-tooling-app)
+  - [Containerizing the PHP-Todo Laravel App](#containerizing-the-php-todo-laravel-app)
+  - [Docker Hub](#docker-hub)
+  - [Jenkins CI/CD Pipelines](#jenkins-cicd-pipelines)
+  - [Docker Compose](#docker-compose)
+- [Key Troubleshooting](#key-troubleshooting)
+- [Tools Used](#tools-used)
+- [Screenshots](#screenshots)
+- [Conclusion](#conclusion)
 
-This project migrates two PHP web applications from VM-based deployments to Docker containers, implements Docker Compose for multi-container orchestration, and builds Jenkins CI/CD pipelines that automatically build, test, and push images to Docker Hub on every commit.
+---
 
-## project repositories
+## Introduction
 
-| repository | description | docker hub |
+Up to this point, every application in this apprenticeship has been deployed on EC2 virtual machines — each running a full guest OS, configured manually or via Ansible and Terraform. That approach works, but it does not scale well when you need to run many small applications with different runtimes and conflicting dependencies. Spinning up a new VM for every service becomes expensive and difficult to maintain.
+
+This project introduces Docker as the solution. Unlike a VM, a Docker container packages only what the application needs — not a full OS — making it lighter, faster, and consistent across any environment that runs the Docker engine. The same container that runs on a developer's laptop will behave identically on a production server. No more "it works on my machine."
+
+The project migrates two PHP web applications — the StegHub Tooling site and a Laravel Todo app — from VM-based deployments into Docker containers. It then implements Docker Compose for single-command multi-container orchestration and Jenkins CI/CD pipelines that automatically build, test, and push versioned images to Docker Hub on every commit.
+
+---
+
+## Project Repositories
+
+| Repository | Description | Docker Hub |
 |---|---|---|
 | [tooling-02](https://github.com/LydiahLaw/tooling-02) | PHP/MySQL Tooling web app | [lydiahlaw/tooling](https://hub.docker.com/r/lydiahlaw/tooling) |
 | [php-todo-docker](https://github.com/LydiahLaw/php-todo-docker) | Laravel PHP Todo app | [lydiahlaw/php-todo](https://hub.docker.com/r/lydiahlaw/php-todo) |
 
-## what was built
+---
 
-### part 1 — mysql in a container
+## What Was Built
 
-Pulled the official MySQL Docker image and ran it as a container on a custom bridge network:
+### MySQL in a Container
+
+Rather than installing MySQL directly on a server, a dedicated Docker network was created and MySQL was run as a container on that network:
 
 ```bash
 docker network create --subnet=172.20.0.0/24 tooling_app_network
@@ -27,17 +52,13 @@ docker run --network tooling_app_network \
   -d mysql/mysql-server:latest
 ```
 
-Created a non-root MySQL user for application connections and loaded the Tooling app database schema into the running container.
+A non-root MySQL user was created for application connections, and the Tooling app database schema was loaded into the running container. Both the database and the PHP app containers communicate over `tooling_app_network` using Docker's internal DNS — the app reaches MySQL by hostname (`mysqlserverhost`), not by IP.
 
-### part 2 — containerizing the tooling app
+---
 
-Built a Docker image for the PHP Tooling web application using the provided Dockerfile based on `php:8-apache`. Key steps in the image:
+### Containerizing the Tooling App
 
-- installs the `mysqli` PHP extension
-- installs Composer for PHP dependency management
-- copies application code into `/var/www`
-- configures Apache with a custom virtual host
-- suppresses PHP deprecation warnings via a custom `php.ini`
+The Tooling app image was built from the provided Dockerfile based on `php:8-apache`. The image installs the `mysqli` PHP extension, Composer, and configures Apache with a custom virtual host. A custom `php.ini` was added to suppress PHP 8 deprecation warnings that were leaking into the browser output.
 
 ```bash
 docker build -t tooling:0.0.1 .
@@ -51,16 +72,17 @@ docker run --network tooling_app_network \
   -it tooling:0.0.1
 ```
 
-### part 3 — containerizing the php-todo laravel app
+---
 
-Wrote a Dockerfile from scratch for the Laravel 5.2 Todo application. Key differences from the Tooling app:
+### Containerizing the PHP-Todo Laravel App
 
-- uses `php:7.4-apache` (Laravel 5.2 requires PHP 7.x, not PHP 8)
-- installs `pdo` and `pdo_mysql` extensions (Laravel uses PDO, not raw mysqli)
-- runs `composer install` inside the image build
-- generates a Laravel app key with `php artisan key:generate`
-- sets Apache document root to `public/` (Laravel's web root)
-- creates required cache and storage directories before Composer runs
+A Dockerfile was written from scratch for the Laravel 5.2 Todo application. Laravel has a different structure from plain PHP — it requires PDO instead of raw mysqli, uses a `public/` document root, and needs Composer to install dependencies and `php artisan` to generate an application key.
+
+Key decisions in the Dockerfile:
+- `php:7.4-apache` base image — Laravel 5.2 requires PHP 7.x, not PHP 8
+- `pdo` and `pdo_mysql` extensions installed alongside `mysqli`
+- `bootstrap/cache/` and `storage/` directories created before `composer install` runs to prevent post-install script failures
+- Apache document root rewritten to `/var/www/html/public` via `sed`
 
 ```bash
 docker build -t php-todo:0.0.1 .
@@ -74,9 +96,11 @@ docker run --network tooling_app_network \
   -it php-todo:0.0.1
 ```
 
-### part 4 — docker hub
+---
 
-Both images pushed to Docker Hub with versioned tags:
+### Docker Hub
+
+Both images were tagged with the Docker Hub username and pushed to public repositories:
 
 ```bash
 docker tag tooling:0.0.1 lydiahlaw/tooling:0.0.1
@@ -86,9 +110,11 @@ docker tag php-todo:0.0.1 lydiahlaw/php-todo:0.0.1
 docker push lydiahlaw/php-todo:0.0.1
 ```
 
-### part 5 — jenkins ci/cd pipelines
+---
 
-Set up Jenkins as a Docker container with access to the host Docker socket, enabling it to build and push images as part of the pipeline:
+### Jenkins CI/CD Pipelines
+
+Jenkins was run as a Docker container with access to the host Docker socket, giving it the ability to build and push images as part of the pipeline:
 
 ```bash
 docker run -d \
@@ -99,13 +125,13 @@ docker run -d \
   jenkins/jenkins:lts
 ```
 
-Both apps have multibranch pipelines with five stages:
+Multibranch pipelines were created for both applications with five stages:
 
 ```
 Initial Cleanup → Checkout → Build → Test → Push → Cleanup
 ```
 
-**test stage approach:** the pipeline spins up the built image as a temporary container on `tooling_app_network`, then runs a `curlimages/curl` container on the same network to hit the app by container name. Docker's internal DNS resolves the container name automatically. The stage fails if the response is not HTTP 200 or 302.
+The test stage spins up the built image as a temporary container, then runs a `curlimages/curl` container on the same Docker network to hit the app by container name. Docker's internal DNS resolves the name automatically. The stage fails if the HTTP response is not 200 or 302.
 
 ```bash
 STATUS=$(docker run --rm --network tooling_app_network curlimages/curl:latest \
@@ -113,52 +139,46 @@ STATUS=$(docker run --rm --network tooling_app_network curlimages/curl:latest \
 echo "$STATUS" | grep -E "200|302"
 ```
 
-**branch-prefixed image tags:**
+Images are tagged with the branch name as a prefix, ensuring every push is traceable to its source branch:
 
-| branch | image tag |
+| Branch | Image Tag |
 |---|---|
 | `main` | `lydiahlaw/tooling:main-0.0.1` |
 | `feature/docker-pipeline` | `lydiahlaw/tooling:feature-docker-pipeline-0.0.1` |
 
-### part 6 — docker compose
+After a successful push, the cleanup stage removes the image from the Jenkins server to keep disk usage in check.
 
-Refactored the Tooling app deployment into a single `tooling.yaml` Docker Compose file:
+---
+
+### Docker Compose
+
+The Tooling app stack was refactored into a single `tooling.yaml` Docker Compose file, bringing up both the PHP app and MySQL database with one command:
 
 ```bash
 docker compose -f tooling.yaml up -d
 ```
 
-This brings up both the PHP app and MySQL database with a single command. The full field-by-field documentation of the Compose file is in the [tooling-02 README](https://github.com/LydiahLaw/tooling-02).
+Full field-by-field documentation of every Compose directive is in the [tooling-02 README](https://github.com/LydiahLaw/tooling-02).
 
-## key troubleshooting solved
+---
 
-**php 8 + dotenv compatibility** — the app uses a version of the dotenv library incompatible with PHP 8, causing deprecation warnings on every page. Fixed by adding a custom `php.ini` that suppresses deprecated and warning-level errors.
+## Key Troubleshooting
 
-**docker socket permissions** — Jenkins running inside Docker could not access the host Docker daemon. Fixed by adding the Jenkins user to the docker group with the correct GID matching the host socket.
+**PHP 8 and dotenv compatibility** — the Tooling app uses a version of the dotenv library incompatible with PHP 8, causing deprecation warnings rendered directly in the browser. Fixed by adding a custom `php.ini` that sets `error_reporting` to exclude deprecated and warning-level errors.
 
-**github api rate limiting** — Jenkins multibranch pipeline scan was sleeping for 40+ minutes due to anonymous GitHub API calls hitting rate limits. Fixed by adding a GitHub personal access token as a Jenkins credential and linking it to the pipeline branch source.
+**Docker socket permissions** — Jenkins running inside Docker could not access the host Docker daemon due to a group ID mismatch on the socket file. Fixed by modifying the docker group GID inside the Jenkins container to match the host socket's group ID.
 
-**curl from inside jenkins container** — the test stage initially tried to curl `localhost:8086` from inside Jenkins, which refers to the Jenkins container's own localhost, not the host machine. Solved by running the curl test from inside a `curlimages/curl` container on the same Docker network, using the app container's service name as the hostname.
+**GitHub API rate limiting** — the Jenkins multibranch pipeline scan was sleeping for 40+ minutes because anonymous GitHub API calls were hitting rate limits. Fixed by creating a GitHub personal access token and linking it to the pipeline branch source configuration.
 
-**docker tag with branch slash** — branch name `feature/docker-pipeline` produced an invalid Docker tag `lydiahlaw/tooling:feature/docker-pipeline-0.0.1` because Docker tags cannot contain forward slashes. Fixed with `.replace('/', '-')` in the Jenkinsfile environment block.
+**Curl from inside the Jenkins container** — the test stage initially tried to curl `localhost:8086` from Jenkins, which resolves to the Jenkins container itself, not the host. Solved by running the curl test from a `curlimages/curl` container on the same Docker network, reaching the app container by its service name.
 
-**concurrent pipeline race condition** — both branch pipelines ran simultaneously and tried to create a container with the same name, causing a conflict. Fixed by naming the test container after the branch: `test-todo-${BRANCH_NAME.replace('/', '-')}`.
+**Docker tag with branch slash** — branch name `feature/docker-pipeline` produced an invalid Docker tag because tags cannot contain forward slashes. Fixed with `.replace('/', '-')` in the Jenkinsfile environment block.
 
-## screenshots
+**Concurrent pipeline race condition** — both branch pipelines ran simultaneously and tried to create a test container with the same name, causing a conflict error. Fixed by naming each test container after its branch: `test-todo-${BRANCH_NAME.replace('/', '-')}`.
 
-### tooling app dashboard
-![Tooling Dashboard](screenshots/tooling-dashboard.png)
+---
 
-### php-todo task list
-![PHP Todo App](screenshots/php-todo.png)
-
-### docker hub repositories
-![Docker Hub](screenshots/dockerhub.png)
-
-### jenkins multibranch pipelines
-![Jenkins Pipelines](screenshots/jenkins-pipelines.png)
-
-## tools used
+## Tools Used
 
 - Docker 29.2.1
 - Docker Compose v5.0.2
@@ -168,6 +188,18 @@ This brings up both the PHP app and MySQL database with a single command. The fu
 - Apache 2
 - WSL2 on Windows
 
-## next
+---
 
-Project 21 — Orchestrating containers at scale with Kubernetes.
+## Screenshots
+
+Screenshots are in the [screenshots](./screenshots/) folder.
+
+---
+
+## Conclusion
+
+This project marked a significant shift in how applications are packaged and delivered. Moving from EC2 instances to containers removes the dependency on a specific OS or server configuration — the container carries its own environment everywhere it goes.
+
+The hands-on troubleshooting in this project was as valuable as the implementation itself. Debugging the Docker socket permissions, working through the WSL network isolation issue, and solving the concurrent pipeline race condition built real intuition for how containers communicate, how Docker networks work, and how CI systems interact with the Docker daemon.
+
+With containerization in place, the natural next step is orchestration — managing containers at scale across multiple nodes. That is what Project 21 addresses with Kubernetes.
