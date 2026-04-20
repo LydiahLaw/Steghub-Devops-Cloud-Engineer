@@ -2,24 +2,25 @@
 
 ## Table of Contents
 
-* Overview
-* Why I Built This
-* Architecture
-* Technologies Used
-* Project Structure
-* Step 1: Infrastructure Setup
-* Step 2: Certificate Authority and TLS
-* Step 3: Kubeconfigs
-* Step 4: etcd Cluster
-* Step 5: Control Plane Setup
-* Step 6: Worker Nodes Setup
-* Step 7: Networking (CNI)
-* Validation
-* Challenges and Debugging
-* Security Considerations
-* Key Takeaways
+## Table of Contents
+- [Overview](#overview)  
+- [Why I Built This](#why-i-built-this)  
+- [Architecture](#architecture)  
+- [Technologies Used](#technologies-used)  
+- [Project Structure](#project-structure)  
+- [Step 1: Infrastructure Setup](#step-1-infrastructure-setup)  
+- [Step 2: Certificate Authority and TLS](#step-2-certificate-authority-and-tls)  
+- [Step 3: Kubeconfigs](#step-3-kubeconfigs)  
+- [Step 4: etcd Cluster](#step-4-etcd-cluster)  
+- [Step 5: Control Plane Setup](#step-5-control-plane-setup)  
+- [Step 6: Worker Nodes Setup](#step-6-worker-nodes-setup)  
+- [Step 7: Networking (CNI)](#step-7-networking-cni)  
+- [Validation](#validation)  
+- [Challenges and Debugging](#challenges-and-debugging)  
+- [Security Considerations](#security-considerations)  
+- [Key Takeaways](#key-takeaways)  
 
----
+
 
 ## Overview
 
@@ -29,7 +30,7 @@ No EKS, no kubeadm, no shortcuts.
 
 Everything from certificates, networking, and control plane components was configured manually.
 
----
+
 
 ## Why I Built This
 
@@ -40,7 +41,7 @@ I didn’t just want to “use Kubernetes”. I wanted to understand:
 * how TLS is used across every component
 * what breaks when things are misconfigured
 
----
+
 
 ## Architecture
 
@@ -49,7 +50,6 @@ I didn’t just want to “use Kubernetes”. I wanted to understand:
 * etcd cluster running across masters
 * AWS Network Load Balancer for API server
 
----
 
 ## Technologies Used
 
@@ -59,7 +59,7 @@ I didn’t just want to “use Kubernetes”. I wanted to understand:
 * cfssl
 * Linux (Ubuntu)
 
----
+
 
 ## Project Structure
 
@@ -73,7 +73,7 @@ Project-21-Kubernetes-From-Scratch-On-AWS/
 
 Sensitive files like certificates, keys, and SSH configs were excluded from version control.
 
----
+
 
 ## Step 1: Infrastructure Setup
 
@@ -88,7 +88,8 @@ aws ec2 describe-instances \
 
 Key lesson: naming consistency matters because later scripts depend on it.
 
----
+<img width="1366" height="768" alt="instances created and confirmed console" src="https://github.com/user-attachments/assets/36ca4178-30ff-4304-a02b-2d8e9fd21e66" />
+
 
 ## Step 2: Certificate Authority and TLS
 
@@ -108,7 +109,8 @@ cfssl gencert -initca ca-csr.json | cfssljson -bare ca
 
 Each worker node certificate had to match its hostname exactly or kubelet would fail to authenticate.
 
----
+<img width="1366" height="768" alt="cert files created" src="https://github.com/user-attachments/assets/e9c36a02-fb3d-45a4-a237-3d4eb8a4166b" />
+
 
 ## Step 3: Kubeconfigs
 
@@ -125,7 +127,7 @@ kubectl config set-cluster kubernetes \
 
 Workers use the load balancer, control plane uses localhost.
 
----
+
 
 ## Step 4: etcd Cluster
 
@@ -143,7 +145,7 @@ ETCDCTL_API=3 etcdctl member list \
 --endpoints=https://127.0.0.1:2379
 ```
 
----
+
 
 ## Step 5: Control Plane Setup
 
@@ -163,7 +165,7 @@ yaml: could not find expected ':'
 
 Fixing indentation solved it.
 
----
+
 
 ## Step 6: Worker Nodes Setup
 
@@ -182,7 +184,8 @@ Started kubelet:
 sudo systemctl start kubelet
 ```
 
----
+<img width="1366" height="768" alt="worker nodes cert" src="https://github.com/user-attachments/assets/bfaba1f6-0f9b-483c-a6d2-4e38d06178c9" />
+
 
 ## Step 7: Networking (CNI)
 
@@ -198,7 +201,7 @@ EOF
 
 Without this, nodes stayed in NotReady state.
 
----
+
 
 ## Validation
 
@@ -212,7 +215,8 @@ Result:
 
 All nodes moved from NotReady → Ready
 
----
+<img width="1366" height="768" alt="nodes ready" src="https://github.com/user-attachments/assets/f7cce89c-534f-4c3c-a4e5-a6bb070567e2" />
+
 
 ## Challenges and Debugging
 
@@ -242,13 +246,12 @@ Fixed by exporting:
 export AWS_REGION=eu-central-1
 ```
 
----
+
 
 ### 3. Encryption Config YAML Error
 
 Cluster failed to start due to malformed YAML.
 
----
 
 ### 4. Kubelet Failure
 
@@ -258,7 +261,7 @@ unknown flag: --network-plugin
 
 Removed deprecated flags.
 
----
+
 
 ### 5. Missing Files on Workers
 
@@ -270,7 +273,6 @@ Fixed by matching:
 k8s-cluster-from-ground-up-worker-X.pem
 ```
 
----
 
 ## Security Considerations
 
