@@ -1,0 +1,14 @@
+# Secrets
+*.pem
+*.key
+*.csr
+*.kubeconfig
+encryption-config.yaml
+
+# SSH
+ssh/
+
+# Temp / system
+*.log
+*.tmp
+.DS_Store

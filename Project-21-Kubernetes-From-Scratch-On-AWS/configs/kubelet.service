@@ -1,0 +1,13 @@
+[Unit]
+Description=Kubernetes Kubelet
+
+[Service]
+ExecStart=/usr/local/bin/kubelet \
+  --config=/var/lib/kubelet/kubelet-config.yaml \
+  --kubeconfig=/var/lib/kubelet/kubeconfig \
+  --container-runtime-endpoint=unix:///run/containerd/containerd.sock \
+  --register-node=true \
+  --v=2
+
+Restart=on-failure
+RestartSec=5
