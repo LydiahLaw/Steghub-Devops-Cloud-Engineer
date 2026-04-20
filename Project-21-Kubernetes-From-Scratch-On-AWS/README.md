@@ -1,6 +1,5 @@
 # Kubernetes From Scratch on AWS
 
-## Table of Contents
 
 ## Table of Contents
 - [Overview](#overview)  
@@ -137,6 +136,7 @@ Installed etcd manually:
 tar -xvf etcd-v3.5.9-linux-amd64.tar.gz
 sudo mv etcd* /usr/local/bin/
 ```
+<img width="1366" height="768" alt="etcd downloaded on master" src="https://github.com/user-attachments/assets/4440f299-e8aa-4861-9de4-05e88d7b2267" />
 
 Started cluster and verified:
 
@@ -145,6 +145,7 @@ ETCDCTL_API=3 etcdctl member list \
 --endpoints=https://127.0.0.1:2379
 ```
 
+<img width="1366" height="768" alt="etcd started" src="https://github.com/user-attachments/assets/f093ca1c-8ca0-45e8-a537-8b47416c3ad2" />
 
 
 ## Step 5: Control Plane Setup
@@ -213,7 +214,14 @@ kubectl --kubeconfig=admin.kubeconfig get nodes
 
 Result:
 
-All nodes moved from NotReady → Ready
+All nodes transitioned from NotReady to Ready.
+
+This confirmed that:
+
+- kubelet was correctly configured on each worker node  
+- TLS certificates were valid and trusted  
+- networking via CNI was functioning  
+- the API server was successfully communicating with all nodes
 
 <img width="1366" height="768" alt="nodes ready" src="https://github.com/user-attachments/assets/f7cce89c-534f-4c3c-a4e5-a6bb070567e2" />
 
@@ -232,7 +240,7 @@ Fixed with:
 chmod 600 key.pem
 ```
 
----
+
 
 ### 2. Missing AWS Region
 
@@ -285,19 +293,28 @@ I intentionally excluded:
 
 These were added to `.gitignore`.
 
----
+
 
 ## Key Takeaways
 
-* Kubernetes is not complex, it’s just very detailed
+* Kubernetes complexity comes from how tightly components depend on each other  
 * Most failures come from small misconfigurations
 * TLS and identity are at the core of everything
 * Debugging is the real skill, not setup
 
----
 
 ## Conclusion
 
-This project forced me to understand Kubernetes at a systems level.
+Building this cluster from scratch forced me to move beyond using Kubernetes into understanding how it actually works.
 
-Not just how to use it, but how it actually works under the hood.
+What stood out most was how tightly everything is connected. A small issue like a misformatted YAML file or a mismatched certificate was enough to bring the entire control plane down. Fixing those issues required tracing how components interact rather than just re-running commands.
+
+The most valuable part of this project was the debugging process. I dealt with:
+- kubelet failing due to deprecated flags  
+- API server failing because of encryption configuration errors  
+- nodes staying NotReady due to missing CNI setup  
+- SSH and file permission issues affecting access and automation  
+
+Working through these made the system much clearer. By the end, I wasn’t just following steps, I understood why each component exists and what breaks when it is misconfigured.
+
+This project gave me a much stronger foundation for working with Kubernetes in real environments, especially when things don’t work as expected.
