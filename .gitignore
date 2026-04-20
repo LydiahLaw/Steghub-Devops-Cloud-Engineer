@@ -29,3 +29,14 @@ crash.*.log
 # OS files
 .DS_Store
 Thumbs.db
+
+# Kubernetes secrets (Project 21)
+Project-21-Kubernetes-From-Scratch-On-AWS/ca-authority/
+Project-21-Kubernetes-From-Scratch-On-AWS/ssh/
+Project-21-Kubernetes-From-Scratch-On-AWS/encryption-config.yaml
+
+# Certs and keys anywhere
+*.pem
+*.key
+*.csr
+*.kubeconfig
