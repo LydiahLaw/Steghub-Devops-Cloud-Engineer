@@ -3,72 +3,51 @@
 ## Table of Contents
 
 * Overview
-* Project Goal
+* Why I Built This
 * Architecture
 * Technologies Used
-* Prerequisites
 * Project Structure
-* Implementation Steps
-
-  * Infrastructure Setup
-  * Certificate Authority and TLS Setup
-  * etcd Cluster Setup
-  * Control Plane Setup
-  * Worker Node Setup
-  * Networking Configuration
-* Validation and Testing
+* Step 1: Infrastructure Setup
+* Step 2: Certificate Authority and TLS
+* Step 3: Kubeconfigs
+* Step 4: etcd Cluster
+* Step 5: Control Plane Setup
+* Step 6: Worker Nodes Setup
+* Step 7: Networking (CNI)
+* Validation
 * Challenges and Debugging
 * Security Considerations
-* Key Learnings
-* Future Improvements
+* Key Takeaways
 
 ---
 
 ## Overview
 
-This project documents the process of building a Kubernetes cluster from scratch on AWS using EC2 instances.
+This project documents how I built a Kubernetes cluster completely from scratch on AWS.
 
-The entire setup is done manually without using tools such as managed Kubernetes services or automated cluster bootstrapping tools. The goal is to understand how Kubernetes works internally by configuring each component step by step.
+No EKS, no kubeadm, no shortcuts.
+
+Everything from certificates, networking, and control plane components was configured manually.
 
 ---
 
-## Project Goal
+## Why I Built This
 
-The objective of this project is to:
+I didn’t just want to “use Kubernetes”. I wanted to understand:
 
-* Understand Kubernetes architecture by building it manually
-* Configure secure communication between all components using TLS
-* Deploy a highly available control plane
-* Bootstrap worker nodes and join them to the cluster
-* Implement basic networking using CNI plugins
-* Validate that the cluster can run real workloads
+* what actually happens when a node joins a cluster
+* how the API server talks to etcd
+* how TLS is used across every component
+* what breaks when things are misconfigured
 
 ---
 
 ## Architecture
 
-The cluster consists of the following components:
-
-### Control Plane (Master Nodes)
-
-* Kubernetes API Server
-* Controller Manager
-* Scheduler
-
-### Worker Nodes
-
-* Kubelet
-* Container Runtime (containerd)
-* Kube Proxy
-
-### Supporting Components
-
-* etcd cluster for distributed key value storage
-* Load balancer to expose the API server
-
-### Request Flow
-
-User interacts with the cluster using kubectl. Requests go through the API server, which stores state in etcd. The scheduler assigns workloads to worker nodes. The kubelet ensures containers are running on each node.
+* 3 Control Plane Nodes
+* 3 Worker Nodes
+* etcd cluster running across masters
+* AWS Network Load Balancer for API server
 
 ---
 
@@ -77,24 +56,14 @@ User interacts with the cluster using kubectl. Requests go through the API serve
 * AWS EC2
 * Kubernetes v1.28
 * containerd
-* cfssl for certificate management
-* Linux Ubuntu
-
----
-
-## Prerequisites
-
-* Basic understanding of Linux and networking
-* AWS account with permissions to create EC2 instances
-* AWS CLI configured
-* kubectl installed locally
-* SSH access to instances
+* cfssl
+* Linux (Ubuntu)
 
 ---
 
 ## Project Structure
 
-```
+```bash
 Project-21-Kubernetes-From-Scratch-On-AWS/
 ├── README.md
 ├── configs/
@@ -102,202 +71,231 @@ Project-21-Kubernetes-From-Scratch-On-AWS/
 ├── scripts/
 ```
 
-Sensitive files such as certificates, private keys, kubeconfig files, and SSH keys are excluded from version control.
+Sensitive files like certificates, keys, and SSH configs were excluded from version control.
 
 ---
 
-## Implementation Steps
+## Step 1: Infrastructure Setup
 
-### Infrastructure Setup
+I provisioned EC2 instances manually using AWS CLI.
 
-* Created EC2 instances for master and worker nodes
-* Configured networking and security groups
-* Set up a load balancer to expose the Kubernetes API
+Each node was tagged for identification:
 
----
-
-### Certificate Authority and TLS Setup
-
-* Generated a Certificate Authority
-* Created TLS certificates for:
-
-  * API server
-  * controller manager
-  * scheduler
-  * kubelet
-  * kube proxy
-* Distributed certificates securely across nodes
-
-Purpose:
-To ensure encrypted communication between all Kubernetes components
-
----
-
-### etcd Cluster Setup
-
-* Installed etcd binaries on master nodes
-* Configured a distributed etcd cluster
-* Secured communication using TLS certificates
-* Verified cluster health
-
-Purpose:
-etcd stores the entire cluster state and must be consistent and secure
-
----
-
-### Control Plane Setup
-
-Configured the following components on master nodes:
-
-#### API Server
-
-* Connected to etcd
-* Enabled TLS authentication
-* Configured service networking
-
-#### Controller Manager
-
-* Handles background tasks such as node management and replication
-
-#### Scheduler
-
-* Assigns pods to worker nodes
-
-All components were configured using systemd services
-
----
-
-### Worker Node Setup
-
-On each worker node:
-
-* Installed containerd as the container runtime
-* Installed kubelet and kube proxy
-* Distributed certificates and kubeconfig files
-* Configured kubelet for node registration
-
-Purpose:
-Worker nodes run application workloads
-
----
-
-### Networking Configuration
-
-* Installed CNI plugins
-* Created network configuration files in `/etc/cni/net.d/`
-* Enabled pod to pod communication
-
-Purpose:
-Without networking configuration, nodes remain in NotReady state
-
----
-
-## Validation and Testing
-
-Cluster validation steps:
-
-```
-kubectl get nodes
+```bash
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=${NAME}-master-0"
 ```
 
-Expected result:
-All nodes show Ready status
+Key lesson: naming consistency matters because later scripts depend on it.
 
 ---
 
-### Test workload
+## Step 2: Certificate Authority and TLS
+
+I generated my own CA and signed certificates for:
+
+* API server
+* kubelet
+* kube-proxy
+* controller manager
+* scheduler
+
+Example:
+
+```bash
+cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+```
+
+Each worker node certificate had to match its hostname exactly or kubelet would fail to authenticate.
+
+---
+
+## Step 3: Kubeconfigs
+
+I created kubeconfigs to connect components to the API server.
+
+Example:
+
+```bash
+kubectl config set-cluster kubernetes \
+  --certificate-authority=ca.pem \
+  --server=https://<LOAD_BALANCER>:6443 \
+  --kubeconfig=admin.kubeconfig
+```
+
+Workers use the load balancer, control plane uses localhost.
+
+---
+
+## Step 4: etcd Cluster
+
+Installed etcd manually:
+
+```bash
+tar -xvf etcd-v3.5.9-linux-amd64.tar.gz
+sudo mv etcd* /usr/local/bin/
+```
+
+Started cluster and verified:
+
+```bash
+ETCDCTL_API=3 etcdctl member list \
+--endpoints=https://127.0.0.1:2379
+```
+
+---
+
+## Step 5: Control Plane Setup
+
+Configured kube-apiserver with encryption:
+
+```bash
+--encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml
+```
+
+This is where I hit a major issue.
+
+My YAML had a formatting error:
 
 ```
-kubectl run nginx --image=nginx
-kubectl get pods -o wide
+yaml: could not find expected ':'
 ```
 
-Expected result:
+Fixing indentation solved it.
 
-* Pod is scheduled to a worker node
-* Pod status is Running
+---
+
+## Step 6: Worker Nodes Setup
+
+Installed container runtime and kubelet.
+
+Moved certificates:
+
+```bash
+sudo mv k8s-cluster-from-ground-up-worker-0.pem \
+/var/lib/kubernetes/kubelet.pem
+```
+
+Started kubelet:
+
+```bash
+sudo systemctl start kubelet
+```
+
+---
+
+## Step 7: Networking (CNI)
+
+Configured bridge network:
+
+```bash
+cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
+{
+  "type": "bridge"
+}
+EOF
+```
+
+Without this, nodes stayed in NotReady state.
+
+---
+
+## Validation
+
+Check cluster:
+
+```bash
+kubectl --kubeconfig=admin.kubeconfig get nodes
+```
+
+Result:
+
+All nodes moved from NotReady → Ready
 
 ---
 
 ## Challenges and Debugging
 
-### Deprecated Kubernetes Flags
+### 1. SSH Key Permissions
 
-Some kubelet flags were removed in newer Kubernetes versions, causing kubelet to fail.
+```
+Permissions 0777 are too open
+```
 
-Fix:
-Removed unsupported flags from kubelet service configuration
+Fixed with:
 
----
-
-### YAML Configuration Errors
-
-Improper formatting in configuration files caused services to fail.
-
-Fix:
-Carefully reviewed and corrected YAML structure
+```bash
+chmod 600 key.pem
+```
 
 ---
 
-### Encryption Configuration Issues
+### 2. Missing AWS Region
 
-Incorrect key length and formatting caused API server startup failures.
+```
+argument --region: expected one argument
+```
 
-Fix:
-Generated a valid key and corrected configuration
+Fixed by exporting:
 
----
-
-### Environment Variable Issues
-
-Unset or incorrect variables caused AWS CLI commands to fail.
-
-Fix:
-Validated variables before running commands
+```bash
+export AWS_REGION=eu-central-1
+```
 
 ---
 
-### Node NotReady State
+### 3. Encryption Config YAML Error
 
-Nodes remained NotReady due to missing CNI configuration.
+Cluster failed to start due to malformed YAML.
 
-Fix:
-Added required network configuration files
+---
+
+### 4. Kubelet Failure
+
+```
+unknown flag: --network-plugin
+```
+
+Removed deprecated flags.
+
+---
+
+### 5. Missing Files on Workers
+
+Wrong filenames caused move failures.
+
+Fixed by matching:
+
+```
+k8s-cluster-from-ground-up-worker-X.pem
+```
 
 ---
 
 ## Security Considerations
 
-* All communication is secured using TLS
-* Sensitive files such as private keys and kubeconfigs are not committed
-* Database credentials and secrets are replaced with placeholders
-* SSH keys are excluded from version control
+I intentionally excluded:
+
+* .pem files
+* private keys
+* kubeconfigs
+* SSH keys
+
+These were added to `.gitignore`.
 
 ---
 
-## Key Learnings
+## Key Takeaways
 
-* Deep understanding of Kubernetes architecture
-* How control plane and worker nodes interact
-* Importance of TLS in distributed systems
-* How kubelet registers and manages nodes
-* How networking enables pod communication
-* Real world debugging and troubleshooting
-
----
-
-## Future Improvements
-
-* Automate infrastructure using Terraform
-* Implement monitoring with Prometheus and Grafana
-* Deploy applications using Helm
-* Add ingress controller for external access
-* Set up CI CD pipelines
+* Kubernetes is not complex, it’s just very detailed
+* Most failures come from small misconfigurations
+* TLS and identity are at the core of everything
+* Debugging is the real skill, not setup
 
 ---
 
 ## Conclusion
 
-This project demonstrates how to build and understand Kubernetes from the ground up by manually configuring each component.
+This project forced me to understand Kubernetes at a systems level.
 
-The experience gained from this process provides a strong foundation for working with Kubernetes in real world cloud environments.
+Not just how to use it, but how it actually works under the hood.
