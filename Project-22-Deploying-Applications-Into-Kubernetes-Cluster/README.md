@@ -1,4 +1,4 @@
-# Project 22: deploying applications into a Kubernetes cluster
+# Deploying Applications Into a Kubernetes Cluster
 
 ## Table of contents
 
@@ -30,7 +30,7 @@ The original plan was to continue working against the kubeadm cluster built on E
 
 None of the objects covered in this project depend on AWS specifically. Pods, Services, ReplicaSets, and Deployments behave the same way on any conformant Kubernetes cluster. The only AWS-specific piece in the original material is the LoadBalancer service type, which provisions a real Elastic Load Balancer on EKS. Minikube has its own way of simulating this locally through `minikube tunnel`, which made it possible to test that service type for real instead of skipping it.
 
-Running locally also meant zero ongoing cost while learning the concepts, with the option to return to a real cloud cluster for the EKS-specific project later in the curriculum.
+Running locally also meant zero ongoing cost while learning the concepts, with the option to return to a real cloud cluster for the EKS-specific project later.
 
 ## Prerequisites
 
@@ -55,8 +55,6 @@ kubectl get nodes
 ```
 
 The Docker driver was used since Docker Desktop was already configured and working in WSL, removing the need for a separate VM hypervisor.
-
-![Minikube node ready](screenshots/01-minikube-node-ready.png)
 
 ## Creating a pod
 
@@ -87,7 +85,7 @@ kubectl get pod nginx-pod -o yaml
 
 `describe` gives a human readable summary plus an event log, useful for troubleshooting when a Pod will not start. `-o yaml` shows the full live object, including fields Kubernetes adds on its own under `status`, which never existed in the original manifest.
 
-![Pod running](screenshots/02-pod-running.png)
+<img width="1366" height="768" alt="nginx 1" src="https://github.com/user-attachments/assets/f139394d-18d2-426c-86d0-bfe14249c1fc" />
 
 ## Reaching a pod directly by its IP
 
@@ -99,6 +97,9 @@ curl -v <nginx-pod-ip>:80
 ```
 
 This returned the default nginx welcome page, confirming Pod to Pod communication works inside the cluster network. The problem: a Pod's IP changes every time it is recreated, so anything hardcoded to that IP breaks the moment the Pod restarts. This is the exact problem a Service solves.
+
+<img width="1366" height="768" alt="nginx up 4" src="https://github.com/user-attachments/assets/6dcf24c5-f1f9-4250-b5fc-647f06851351" />
+
 
 ## Creating a service
 
@@ -130,7 +131,7 @@ kubectl get pod nginx-pod -o wide
 
 Comparing these two outputs shows the mechanism directly: the Service's `CLUSTER-IP` acts as a stable internal address, and its `SELECTOR` column determines which Pod's actual IP it forwards traffic to.
 
-![Service working through port forward](screenshots/03-service-port-forward.png)
+<img width="1366" height="768" alt="port forwarding works 5" src="https://github.com/user-attachments/assets/5f828e8c-700d-4732-8afc-b796eeb85eea" />
 
 ## Exposing the service with nodeport
 
@@ -156,6 +157,7 @@ On a cloud VM, this service type would normally be reached using the node's publ
 kubectl apply -f nginx-service.yaml
 minikube service nginx-service --url
 ```
+<img width="1366" height="768" alt="nordport added 6" src="https://github.com/user-attachments/assets/cc491308-55f9-4f6b-9d3d-bf75bffeeeda" />
 
 ## Replicasets and self healing
 
@@ -200,7 +202,7 @@ kubectl get pods
 
 A replacement Pod appeared within seconds, keeping the total at three. This is the core behaviour a ReplicaSet provides: it is constantly reconciling the live state of the cluster against the desired count in its spec.
 
-![ReplicaSet self healing](screenshots/04-replicaset-selfheal.png)
+<img width="1366" height="768" alt="self healing test 9" src="https://github.com/user-attachments/assets/f8d47cb6-af5d-4982-a36d-aa067ce44ad3" />
 
 ## Scaling a replicaset
 
@@ -220,6 +222,8 @@ kubectl apply -f rs.yaml
 ```
 
 The declarative approach is the one to default to in practice. An imperative scale changes the cluster but leaves the YAML file out of sync, so a later `kubectl apply` of the unchanged file would silently undo the imperative change. Treating the YAML file as the single source of truth avoids that.
+<img width="1366" height="768" alt="declarative" src="https://github.com/user-attachments/assets/77566625-0851-4bcc-be57-f6a4f3b8c470" />
+
 
 ## Advanced label selectors
 
@@ -282,7 +286,7 @@ minikube tunnel
 
 Once running, `kubectl get service nginx-service` showed `EXTERNAL-IP` change from `<pending>` to `127.0.0.1`, which on the Docker driver is the most direct route back into the cluster. The service was reachable in the browser at `http://127.0.0.1:80`.
 
-![LoadBalancer external IP assigned](screenshots/05-loadbalancer-tunnel.png)
+<img width="1366" height="768" alt="loadbalancer external ip" src="https://github.com/user-attachments/assets/77ed330f-3144-493e-8714-fff5e7eaede1" />
 
 ## Deployments
 
@@ -333,7 +337,11 @@ ls -ltr /etc/nginx/
 cat /etc/nginx/conf.d/default.conf
 ```
 
-![Deployment scaled to 15 replicas](screenshots/06-deployment-scaled.png)
+<img width="1366" height="768" alt="deployment working" src="https://github.com/user-attachments/assets/dbda1a37-cbda-4134-8332-5bfd1b8aa8a9" />
+<img width="1366" height="768" alt="deployment sacled to 15" src="https://github.com/user-attachments/assets/699b2377-d998-464a-9637-c700de1c283a" />
+
+
+
 
 ## Why pods do not store data
 
@@ -349,6 +357,7 @@ cat > /usr/share/nginx/html/index.html << 'EOF'
 EOF
 exit
 ```
+<img width="1366" height="768" alt="nginx page edited" src="https://github.com/user-attachments/assets/d0dd4292-a68b-48d7-a96d-be9f797206ef" />
 
 The edited page loaded correctly in the browser. The Pod was then deleted directly:
 
@@ -358,7 +367,7 @@ kubectl delete pod <pod-name>
 
 Kubernetes immediately created a replacement to maintain the desired count of one. Refreshing the browser showed the original default nginx page again, not the edited version. The edit existed only inside the dead container's writable layer, which Kubernetes does not preserve across restarts. Deployments guarantee a Pod count, not data continuity, which is the reason the next project in this series introduces Volumes, PersistentVolumes, and PersistentVolumeClaims.
 
-![Custom page lost after pod restart](screenshots/07-data-loss-demo.png)
+<img width="1366" height="768" alt="deployment scaledown" src="https://github.com/user-attachments/assets/62b0cc08-cdfa-4a3e-93a5-97755cf58676" />
 
 ## Cleanup
 
