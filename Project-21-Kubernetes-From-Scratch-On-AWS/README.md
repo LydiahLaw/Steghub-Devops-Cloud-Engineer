@@ -318,3 +318,12 @@ The most valuable part of this project was the debugging process. I dealt with:
 Working through these made the system much clearer. By the end, I wasn’t just following steps, I understood why each component exists and what breaks when it is misconfigured.
 
 This project gave me a much stronger foundation for working with Kubernetes in real environments, especially when things don’t work as expected.
+
+
+## Blog Post
+
+I wrote a detailed, step by step breakdown of this project, including the challenges I faced and how I debugged them.
+
+You can read it here:
+
+https://medium.com/@LydLaw/i-built-kubernetes-from-scratch-on-aws-and-it-broke-a-lot-5eb4f7a54c23
