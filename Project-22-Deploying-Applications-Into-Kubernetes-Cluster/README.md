@@ -357,7 +357,7 @@ cat > /usr/share/nginx/html/index.html << 'EOF'
 EOF
 exit
 ```
-<img width="1366" height="768" alt="nginx page edited" src="https://github.com/user-attachments/assets/d0dd4292-a68b-48d7-a96d-be9f797206ef" />
+<img width="1366" height="721" alt="nginx page edited" src="https://github.com/user-attachments/assets/cbfcb519-53f3-447f-ad0f-375f1b60ef00" />
 
 The edited page loaded correctly in the browser. The Pod was then deleted directly:
 
