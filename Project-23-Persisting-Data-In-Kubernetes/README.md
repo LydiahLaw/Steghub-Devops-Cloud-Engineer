@@ -12,7 +12,6 @@
 - [Part 5 - ConfigMaps as configuration volumes](#part-5---configmaps-as-configuration-volumes)
 - [Key issues encountered](#key-issues-encountered)
 - [Tools used](#tools-used)
-- [Screenshots](#screenshots)
 - [Conclusion](#conclusion)
 
 ## Overview
@@ -49,6 +48,7 @@ After cluster creation, verify nodes are ready:
 ```bash
 kubectl get nodes
 ```
+<img width="1366" height="768" alt="eks 1" src="https://github.com/user-attachments/assets/75f31b8f-001c-46e8-b5f3-5bff7786d9ac" />
 
 The EBS CSI driver is required on EKS 1.34+ for volume attachment. The `awsElasticBlockStore` volume type is deprecated and requires the CSI driver to function. Install it and configure the necessary IAM permissions:
 
@@ -128,6 +128,7 @@ cat /etc/nginx/conf.d/default.conf
 
 The config shows nginx serves files from `/usr/share/nginx/html`. This directory lives inside the container's writable layer and disappears when the pod is replaced.
 
+
 ## Part 2 - Attaching an EBS volume manually
 
 Before creating an EBS volume, identify which node the pod is running on and confirm its availability zone. EBS volumes must exist in the same AZ as the node they will be attached to.
@@ -189,6 +190,7 @@ kubectl describe deployment nginx-deployment
 ```
 
 The pod describe output shows the volume under the `Volumes` section, but `Mounts: <none>` in the container spec confirms it is attached but not yet accessible to the container.
+<img width="1366" height="768" alt="mounts none" src="https://github.com/user-attachments/assets/83ac134b-77e4-47b1-b229-5c1a6fbd67bd" />
 
 ## Part 3 - Mounting the volume into the container
 
@@ -249,6 +251,8 @@ kubectl exec -it <pod-name> -- ls /usr/share/nginx/
 The volume mounts at `/usr/share/nginx/` and shows only `lost+found`. Mounting a volume onto a directory that already contains data wipes the existing content — this is expected behaviour. Accessing nginx via port-forward at this point returns a 403 because the `html/` directory that holds `index.html` no longer exists.
 
 This approach has significant limitations: the volume must be pre-created in the correct AZ, the volumeID must be hardcoded in the manifest, and EBS only supports attachment to a single EC2 instance at a time. These constraints make it impractical for production use.
+<img width="1366" height="768" alt="html files wiped" src="https://github.com/user-attachments/assets/17377fdd-041e-4635-aab4-8962b2e94c07" />
+
 
 ## Part 4 - Persistent volumes and persistent volume claims
 
@@ -287,6 +291,8 @@ kubectl get pv
 ```
 
 The PVC shows `Pending` and the describe output confirms it is `waiting for first consumer to be created before binding`. No PV exists yet.
+<img width="1366" height="768" alt="waiting for customer efore binding" src="https://github.com/user-attachments/assets/292563a9-7aa1-4998-835f-053af1cd2e25" />
+
 
 Update the deployment to reference the PVC instead of a raw EBS volume:
 
@@ -330,6 +336,8 @@ kubectl get pv
 ```
 
 Once the pod starts, the PVC moves to `Bound` and a PV is dynamically created. The PV name corresponds to an EBS volume that Kubernetes provisioned automatically in the correct AZ, without any manual intervention.
+<img width="1366" height="768" alt="pvc bound" src="https://github.com/user-attachments/assets/198af84a-f372-496e-a2f9-6025b13991a4" />
+
 
 ## Part 5 - ConfigMaps as configuration volumes
 
@@ -445,6 +453,8 @@ The updated content appears inside the running pod without any pod restart. To t
 ```bash
 kubectl rollout restart deploy nginx-deployment
 ```
+<img width="1366" height="768" alt="websited edited" src="https://github.com/user-attachments/assets/0f0a6be7-98a0-4099-981c-8a8d8522760d" />
+
 
 ## Key issues encountered
 
@@ -465,9 +475,6 @@ kubectl rollout restart deploy nginx-deployment
 - AWS EBS CSI Driver
 - nginx:latest
 
-## Screenshots
-
-_Add screenshots here_
 
 ## Conclusion
 
