@@ -1,0 +1,24 @@
+# Terraform local state and working files (state lives in S3, not locally)
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Variable files that may contain account-specific values (IAM usernames, etc.)
+variables.tfvars
+*.auto.tfvars
+
+# Generated kubeconfig files - contain cluster endpoint and CA data
+eks-kubeconfig
+kubeconfig
+*.kubeconfig
+
+# Helm install script artifact
+get_helm.sh
+
+# Editor/OS noise
+.vscode/
+.DS_Store

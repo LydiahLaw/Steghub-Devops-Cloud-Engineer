@@ -1,0 +1,18 @@
+cluster_name            = "your-eks-cluster-name"
+iac_environment_tag     = "development"
+name_prefix             = "your-prefix"
+main_network_block      = "10.0.0.0/16"
+subnet_prefix_extension = 4
+zone_offset             = 8
+
+# These must already exist as IAM users in your AWS account
+admin_users     = ["your-iam-username"]
+developer_users = ["your-developer-username"]
+
+asg_instance_types = [
+  { instance_type = "t3.small" },
+  { instance_type = "t2.small" },
+]
+
+autoscaling_minimum_size_by_az = 1
+autoscaling_maximum_size_by_az = 2
