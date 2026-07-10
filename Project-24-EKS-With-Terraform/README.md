@@ -5,31 +5,30 @@
 - [Overview](#overview)
 - [Tools and versions](#tools-and-versions)
 - [Prerequisites](#prerequisites)
-- [Step 1: project directory](#step-1-project-directory)
-- [Step 2: S3 bucket and DynamoDB table for remote state](#step-2-s3-bucket-and-dynamodb-table-for-remote-state)
-- [Step 3: backend.tf](#step-3-backendtf)
-- [Step 4: network.tf](#step-4-networktf)
-- [Step 5: variables.tf, first pass](#step-5-variablestf-first-pass)
-- [Step 6: data.tf](#step-6-datatf)
-- [Step 7: eks.tf](#step-7-ekstf)
-- [Step 8: locals.tf](#step-8-localstf)
-- [Step 9: variables.tf, remaining variables](#step-9-variablestf-remaining-variables)
-- [Step 10: variables.tfvars](#step-10-variablestfvars)
-- [Step 11: provider.tf](#step-11-providertf)
-- [Step 12 to 13: init and plan](#step-12-to-13-init-and-plan)
-- [Step 14: apply, and the expected first failure](#step-14-apply-and-the-expected-first-failure)
-- [Step 15: fixing the aws-auth ConfigMap failure](#step-15-fixing-the-aws-auth-configmap-failure)
-- [Step 16: generating the kubeconfig](#step-16-generating-the-kubeconfig)
+- [Step 1: S3 bucket for remote state](#step-1-s3-bucket-for-remote-state)
+- [Step 2: backend.tf](#step-2-backendtf)
+- [Step 3: network.tf](#step-3-networktf)
+- [Step 4: variables.tf, first pass](#step-4-variablestf-first-pass)
+- [Step 5: data.tf](#step-5-datatf)
+- [Step 6: eks.tf](#step-6-ekstf)
+- [Step 7: locals.tf](#step-7-localstf)
+- [Step 8: variables.tf, remaining variables](#step-8-variablestf-remaining-variables)
+- [Step 9: variables.tfvars](#step-9-variablestfvars)
+- [Step 10: provider.tf](#step-10-providertf)
+- [Step 11 to 12: init and plan](#step-11-to-12-init-and-plan)
+- [Step 13: apply, and the expected first failure](#step-13-apply-and-the-expected-first-failure)
+- [Step 14: fixing the aws-auth ConfigMap failure](#step-14-fixing-the-aws-auth-configmap-failure)
+- [Step 15: generating the kubeconfig](#step-15-generating-the-kubeconfig)
 - [The EBS CSI driver gap](#the-ebs-csi-driver-gap)
 - [The missing default StorageClass](#the-missing-default-storageclass)
-- [Step 17: Helm chart concept](#step-17-helm-chart-concept)
-- [Step 18 to 19: installing and verifying Helm](#step-18-to-19-installing-and-verifying-helm)
-- [Step 20 to 22: installing Jenkins](#step-20-to-22-installing-jenkins)
-- [Step 23 to 24: checking pods](#step-23-to-24-checking-pods)
-- [Step 25: reading logs from a multi-container pod](#step-25-reading-logs-from-a-multi-container-pod)
-- [Step 26 to 29: krew, konfig, and merging kubeconfigs](#step-26-to-29-krew-konfig-and-merging-kubeconfigs)
-- [Step 30 to 31: confirming the merged context works](#step-30-to-31-confirming-the-merged-context-works)
-- [Step 32 to 33: retrieving the admin password and logging in](#step-32-to-33-retrieving-the-admin-password-and-logging-in)
+- [Step 16: Helm chart concept](#step-16-helm-chart-concept)
+- [Step 17 to 18: installing and verifying Helm](#step-17-to-18-installing-and-verifying-helm)
+- [Step 19 to 21: installing Jenkins](#step-19-to-21-installing-jenkins)
+- [Step 22 to 23: checking pods](#step-22-to-23-checking-pods)
+- [Step 24: reading logs from a multi-container pod](#step-24-reading-logs-from-a-multi-container-pod)
+- [Step 25 to 28: krew, konfig, and merging kubeconfigs](#step-25-to-28-krew-konfig-and-merging-kubeconfigs)
+- [Step 29 to 30: confirming the merged context works](#step-29-to-30-confirming-the-merged-context-works)
+- [Step 31 to 32: retrieving the admin password and logging in](#step-31-to-32-retrieving-the-admin-password-and-logging-in)
 - [Cleanup](#cleanup)
 - [Conclusion](#conclusion)
 
@@ -45,14 +44,7 @@ Terraform 1.9 or later, AWS provider `~> 5.0`, EKS module `~> 19.0`, cluster ver
 
 AWS CLI configured with credentials able to create VPCs, EC2 instances, IAM roles, and EKS clusters. Terraform 1.9 or later. kubectl matching the cluster's Kubernetes minor version. Helm 3.
 
-## Step 1: project directory
-
-```bash
-mkdir Project-24-EKS-With-Terraform
-cd Project-24-EKS-With-Terraform
-```
-
-## Step 2: S3 bucket and DynamoDB table for remote state
+## Step 1: S3 bucket for remote state
 
 ```bash
 aws s3api create-bucket \
@@ -63,28 +55,24 @@ aws s3api create-bucket \
 aws s3api put-bucket-versioning \
   --bucket lydiah-eks-terraform-state \
   --versioning-configuration Status=Enabled
-
-aws dynamodb create-table \
-  --table-name eks-terraform-state-locks \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST
 ```
 
-## Step 3: backend.tf
+A DynamoDB lock table is not used here. Terraform's S3 backend supports native state locking directly (`use_lockfile`), which removes the need for a separate DynamoDB table for this purpose.
 
-Configures the S3 backend, the DynamoDB lock table, and pins the required provider versions.
+## Step 2: backend.tf
+
+Configures the S3 backend and pins the required provider versions.
 
 ```hcl
 terraform {
-  required_version = "~> 1.9"
+  required_version = "~> 1.11"   # use_lockfile needs 1.11+ to be GA
 
   backend "s3" {
-    bucket         = "lydiah-eks-terraform-state"
-    key            = "eks/terraform.tfstate"
-    region         = "us-west-1"
-    dynamodb_table = "eks-terraform-state-locks"
-    encrypt        = true
+    bucket       = "lydiah-eks-terraform-state"
+    key          = "eks/terraform.tfstate"
+    region       = "us-west-1"
+    use_lockfile = true    # native S3 state locking, no DynamoDB table needed
+    encrypt      = true
   }
 
   required_providers {
@@ -104,7 +92,7 @@ terraform {
 }
 ```
 
-## Step 4: network.tf
+## Step 3: network.tf
 
 Creates the VPC using the official `terraform-aws-modules/vpc/aws` module, with subnets computed per availability zone and tagged for EKS discovery.
 
@@ -162,7 +150,7 @@ module "vpc" {
 }
 ```
 
-## Step 5: variables.tf, first pass
+## Step 4: variables.tf, first pass
 
 ```hcl
 variable "cluster_name" {
@@ -196,9 +184,9 @@ variable "zone_offset" {
 }
 ```
 
-## Step 6: data.tf
+## Step 5: data.tf
 
-At this stage, only the availability zones and caller identity are needed. The cluster connection data sources are added later, in the Step 15 fix.
+At this stage, only the availability zones and caller identity are needed. The cluster connection data sources are added later, in the Step 14 fix.
 
 ```hcl
 data "aws_availability_zones" "available_azs" {
@@ -208,7 +196,7 @@ data "aws_availability_zones" "available_azs" {
 data "aws_caller_identity" "current" {}
 ```
 
-## Step 7: eks.tf
+## Step 6: eks.tf
 
 ```hcl
 module "eks_cluster" {
@@ -244,7 +232,7 @@ module "eks_cluster" {
 }
 ```
 
-## Step 8: locals.tf
+## Step 7: locals.tf
 
 Builds the admin and developer IAM user lists in the shape the EKS module expects, and defines the self-managed node group with a mixed spot instance policy.
 
@@ -304,9 +292,9 @@ locals {
 }
 ```
 
-## Step 9: variables.tf, remaining variables
+## Step 8: variables.tf, remaining variables
 
-Appended to the same file from Step 5.
+Appended to the same file from Step 4.
 
 ```hcl
 variable "admin_users" {
@@ -334,7 +322,7 @@ variable "autoscaling_maximum_size_by_az" {
 }
 ```
 
-## Step 10: variables.tfvars
+## Step 9: variables.tfvars
 
 The real values used, kept out of version control since `admin_users` and `developer_users` must reference IAM usernames that actually exist in the AWS account. A sanitized `variables.tfvars.example` is committed instead.
 
@@ -360,7 +348,7 @@ autoscaling_maximum_size_by_az = 2
 
 The maximum autoscaling size was set to 2 per availability zone rather than the higher value in the original material, since this is a learning cluster running on spot instances and does not need to scale to that many nodes.
 
-## Step 11: provider.tf
+## Step 10: provider.tf
 
 ```hcl
 provider "aws" {
@@ -371,16 +359,16 @@ provider "random" {
 }
 ```
 
-The Kubernetes provider block is added later, in Step 15, once the cluster's connection data exists to configure it from.
+The Kubernetes provider block is added later, in Step 14, once the cluster's connection data exists to configure it from.
 
-## Step 12 to 13: init and plan
+## Step 11 to 12: init and plan
 
 ```bash
 terraform init
 terraform plan -var-file="variables.tfvars"
 ```
 
-## Step 14: apply, and the expected first failure
+## Step 13: apply, and the expected first failure
 
 ```bash
 terraform apply -var-file="variables.tfvars"
@@ -394,7 +382,7 @@ Error: Post "http://localhost/api/v1/namespaces/kube-system/configmaps": dial tc
 
 This happens because the Kubernetes provider has no connection details configured yet, so it defaults to `localhost`.
 
-## Step 15: fixing the aws-auth ConfigMap failure
+## Step 14: fixing the aws-auth ConfigMap failure
 
 Two data sources are added to `data.tf`, to read the cluster's endpoint and authentication token. The first attempt referenced `module.eks_cluster.cluster_id`, which produced this error on apply:
 
@@ -438,7 +426,7 @@ terraform apply -var-file="variables.tfvars"
 
 This creates the aws-auth ConfigMap successfully, since the cluster already exists in state from the first apply.
 
-## Step 16: generating the kubeconfig
+## Step 15: generating the kubeconfig
 
 ```bash
 aws eks update-kubeconfig --name lydiah-eks-cluster --region us-west-1
@@ -529,11 +517,11 @@ kubectl get pods --namespace jenkins-namespace
 
 The PVC then shows `STATUS: Bound` against the `gp3` class, and the pod reaches `2/2 Running`.
 
-## Step 17: Helm chart concept
+## Step 16: Helm chart concept
 
 A Helm chart packages a set of Kubernetes manifest templates together with a values file. Installing a chart renders those templates with the given values and applies the result as one unit, tracked as a release, which can later be upgraded, rolled back, or removed as a whole rather than by hunting down individual manifests.
 
-## Step 18 to 19: installing and verifying Helm
+## Step 17 to 18: installing and verifying Helm
 
 ```bash
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
@@ -542,7 +530,7 @@ chmod 700 get_helm.sh
 helm version --short
 ```
 
-## Step 20 to 22: installing Jenkins
+## Step 19 to 21: installing Jenkins
 
 ```bash
 helm repo add jenkinsci https://charts.jenkins.io
@@ -554,7 +542,7 @@ helm ls --namespace jenkins-namespace
 
 Jenkins is installed into a dedicated `jenkins-namespace` namespace rather than the default namespace, for isolation from other workloads on the cluster.
 
-## Step 23 to 24: checking pods
+## Step 22 to 23: checking pods
 
 ```bash
 kubectl get pods --namespace jenkins-namespace
@@ -563,7 +551,7 @@ kubectl describe pod my-jenkins-0 --namespace jenkins-namespace
 
 The pod runs two containers, `jenkins` and `config-reload`, plus two init containers.
 
-## Step 25: reading logs from a multi-container pod
+## Step 24: reading logs from a multi-container pod
 
 ```bash
 kubectl logs my-jenkins-0 --namespace jenkins-namespace
@@ -581,7 +569,7 @@ To read a different container's logs explicitly:
 kubectl logs my-jenkins-0 --namespace jenkins-namespace -c config-reload
 ```
 
-## Step 26 to 29: krew, konfig, and merging kubeconfigs
+## Step 25 to 28: krew, konfig, and merging kubeconfigs
 
 ```bash
 (
@@ -605,7 +593,7 @@ aws eks update-kubeconfig --name lydiah-eks-cluster --region us-west-1 --kubecon
 kubectl konfig import --save ./eks-kubeconfig
 ```
 
-## Step 30 to 31: confirming the merged context works
+## Step 29 to 30: confirming the merged context works
 
 ```bash
 kubectl config get-contexts
@@ -614,7 +602,7 @@ kubectl get pods --namespace jenkins-namespace
 kubectl config current-context
 ```
 
-## Step 32 to 33: retrieving the admin password and logging in
+## Step 31 to 32: retrieving the admin password and logging in
 
 ```bash
 kubectl exec --namespace jenkins-namespace -it svc/my-jenkins -c jenkins -- /bin/cat /run/secrets/additional/chart-admin-password && echo
@@ -647,7 +635,7 @@ aws ec2 describe-addresses --region us-west-1
 aws ec2 describe-volumes --region us-west-1 --filters "Name=status,Values=available"
 ```
 
-`terraform destroy` does not remove the S3 bucket or DynamoDB table backing the remote state, since the backend cannot delete the location storing its own state. These can be removed separately:
+`terraform destroy` does not remove the S3 bucket backing the remote state, since the backend cannot delete the location storing its own state. This can be removed separately:
 
 ```bash
 aws s3api delete-objects --bucket lydiah-eks-terraform-state \
@@ -659,7 +647,6 @@ aws s3api delete-objects --bucket lydiah-eks-terraform-state \
   --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}' --output json)"
 
 aws s3api delete-bucket --bucket lydiah-eks-terraform-state --region us-west-1
-aws dynamodb delete-table --table-name eks-terraform-state-locks --region us-west-1
 ```
 
 The bucket has versioning enabled, so a plain `aws s3 rm --recursive` is not sufficient to empty it; the object versions and delete markers left behind have to be removed explicitly before the bucket itself can be deleted.
