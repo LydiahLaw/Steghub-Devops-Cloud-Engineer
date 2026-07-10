@@ -3,103 +3,667 @@
 ## Table of contents
 
 - [Overview](#overview)
-- [Architecture](#architecture)
+- [Tools and versions](#tools-and-versions)
 - [Prerequisites](#prerequisites)
-- [Part A: provisioning EKS with Terraform](#part-a-provisioning-eks-with-terraform)
-- [Part B: deploying Jenkins with Helm](#part-b-deploying-jenkins-with-helm)
-- [Issues encountered and fixes](#issues-encountered-and-fixes)
+- [Step 1: project directory](#step-1-project-directory)
+- [Step 2: S3 bucket and DynamoDB table for remote state](#step-2-s3-bucket-and-dynamodb-table-for-remote-state)
+- [Step 3: backend.tf](#step-3-backendtf)
+- [Step 4: network.tf](#step-4-networktf)
+- [Step 5: variables.tf, first pass](#step-5-variablestf-first-pass)
+- [Step 6: data.tf](#step-6-datatf)
+- [Step 7: eks.tf](#step-7-ekstf)
+- [Step 8: locals.tf](#step-8-localstf)
+- [Step 9: variables.tf, remaining variables](#step-9-variablestf-remaining-variables)
+- [Step 10: variables.tfvars](#step-10-variablestfvars)
+- [Step 11: provider.tf](#step-11-providertf)
+- [Step 12 to 13: init and plan](#step-12-to-13-init-and-plan)
+- [Step 14: apply, and the expected first failure](#step-14-apply-and-the-expected-first-failure)
+- [Step 15: fixing the aws-auth ConfigMap failure](#step-15-fixing-the-aws-auth-configmap-failure)
+- [Step 16: generating the kubeconfig](#step-16-generating-the-kubeconfig)
+- [The EBS CSI driver gap](#the-ebs-csi-driver-gap)
+- [The missing default StorageClass](#the-missing-default-storageclass)
+- [Step 17: Helm chart concept](#step-17-helm-chart-concept)
+- [Step 18 to 19: installing and verifying Helm](#step-18-to-19-installing-and-verifying-helm)
+- [Step 20 to 22: installing Jenkins](#step-20-to-22-installing-jenkins)
+- [Step 23 to 24: checking pods](#step-23-to-24-checking-pods)
+- [Step 25: reading logs from a multi-container pod](#step-25-reading-logs-from-a-multi-container-pod)
+- [Step 26 to 29: krew, konfig, and merging kubeconfigs](#step-26-to-29-krew-konfig-and-merging-kubeconfigs)
+- [Step 30 to 31: confirming the merged context works](#step-30-to-31-confirming-the-merged-context-works)
+- [Step 32 to 33: retrieving the admin password and logging in](#step-32-to-33-retrieving-the-admin-password-and-logging-in)
 - [Cleanup](#cleanup)
 - [Conclusion](#conclusion)
 
 ## Overview
 
-This project provisions an Amazon EKS cluster using Terraform, with a self-managed node group, VPC networking, and IAM-based cluster access. Jenkins is then deployed onto the cluster using Helm, with kubectl and Helm configured to communicate with the cluster through a merged kubeconfig.
+This project provisions an Amazon EKS cluster with Terraform, using a self-managed node group and IAM-based cluster access, then deploys Jenkins onto it with Helm.
 
-The project follows the StegHub Project 24 curriculum, updated to current tool versions where the original material referenced deprecated commands or module versions.
+## Tools and versions
 
-## Architecture
-
-The cluster runs in a dedicated VPC with public and private subnets across the region's availability zones. A single NAT gateway routes egress traffic from private subnets, where the worker nodes live. The EKS control plane is managed by AWS; the data plane is a self-managed Auto Scaling group of EC2 instances using a mixed spot instance policy.
-
-Jenkins runs as a StatefulSet in its own namespace, backed by a PersistentVolumeClaim provisioned through the AWS EBS CSI driver.
+Terraform 1.9 or later, AWS provider `~> 5.0`, EKS module `~> 19.0`, cluster version 1.32, kubectl matching 1.32.x, and Helm 3 latest.
 
 ## Prerequisites
 
-- AWS CLI configured with credentials that have permissions to create VPCs, EC2 instances, IAM roles, and EKS clusters
-- Terraform 1.9 or later
-- kubectl matching the cluster's Kubernetes minor version
-- Helm 3
+AWS CLI configured with credentials able to create VPCs, EC2 instances, IAM roles, and EKS clusters. Terraform 1.9 or later. kubectl matching the cluster's Kubernetes minor version. Helm 3.
 
-## Part A: provisioning EKS with Terraform
+## Step 1: project directory
 
-The Terraform configuration is split across the following files:
+```bash
+mkdir Project-24-EKS-With-Terraform
+cd Project-24-EKS-With-Terraform
+```
 
-- `backend.tf` configures remote state storage in S3 with DynamoDB locking
-- `provider.tf` declares the AWS, random, and Kubernetes providers
-- `network.tf` creates a VPC with public and private subnets tagged for EKS discovery, plus a NAT gateway backed by a reserved Elastic IP
-- `variables.tf` and `variables.tfvars` hold the input variables and their values
-- `data.tf` reads the account's available availability zones and caller identity, and the created cluster's connection details
-- `locals.tf` builds the IAM user mappings for cluster access and the self-managed node group definition
-- `eks.tf` defines the EKS cluster module itself
+## Step 2: S3 bucket and DynamoDB table for remote state
 
-Provisioning proceeds in two applies. The first creates the VPC, the cluster, and the self-managed node group. Because the Kubernetes provider depends on data read from the cluster that does not yet exist, this first apply fails on the aws-auth ConfigMap step with a connection-refused error. The second apply, after the cluster's connection data is available in state, completes the ConfigMap creation and finishes cleanly.
+```bash
+aws s3api create-bucket \
+  --bucket lydiah-eks-terraform-state \
+  --region us-west-1 \
+  --create-bucket-configuration LocationConstraint=us-west-1
 
-Once the cluster is up, a kubeconfig is generated with:
+aws s3api put-bucket-versioning \
+  --bucket lydiah-eks-terraform-state \
+  --versioning-configuration Status=Enabled
+
+aws dynamodb create-table \
+  --table-name eks-terraform-state-locks \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
+
+## Step 3: backend.tf
+
+Configures the S3 backend, the DynamoDB lock table, and pins the required provider versions.
+
+```hcl
+terraform {
+  required_version = "~> 1.9"
+
+  backend "s3" {
+    bucket         = "lydiah-eks-terraform-state"
+    key            = "eks/terraform.tfstate"
+    region         = "us-west-1"
+    dynamodb_table = "eks-terraform-state-locks"
+    encrypt        = true
+  }
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.20"
+    }
+  }
+}
+```
+
+## Step 4: network.tf
+
+Creates the VPC using the official `terraform-aws-modules/vpc/aws` module, with subnets computed per availability zone and tagged for EKS discovery.
+
+```hcl
+resource "aws_eip" "nat_gw_elastic_ip" {
+  domain = "vpc"
+
+  tags = {
+    Name            = "${var.cluster_name}-nat-eip"
+    iac_environment = var.iac_environment_tag
+  }
+}
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
+
+  name = "${var.name_prefix}-vpc"
+  cidr = var.main_network_block
+  azs  = data.aws_availability_zones.available_azs.names
+
+  private_subnets = [
+    for zone_id in data.aws_availability_zones.available_azs.zone_ids :
+    cidrsubnet(var.main_network_block, var.subnet_prefix_extension, tonumber(substr(zone_id, length(zone_id) - 1, 1)) - 1)
+  ]
+
+  public_subnets = [
+    for zone_id in data.aws_availability_zones.available_azs.zone_ids :
+    cidrsubnet(var.main_network_block, var.subnet_prefix_extension, tonumber(substr(zone_id, length(zone_id) - 1, 1)) + var.zone_offset - 1)
+  ]
+
+  enable_nat_gateway     = true
+  single_nat_gateway     = true
+  one_nat_gateway_per_az = false
+  enable_dns_hostnames   = true
+  reuse_nat_ips          = true
+  external_nat_ip_ids    = [aws_eip.nat_gw_elastic_ip.id]
+
+  tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    iac_environment                             = var.iac_environment_tag
+  }
+
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                    = "1"
+    iac_environment                             = var.iac_environment_tag
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"           = "1"
+    iac_environment                             = var.iac_environment_tag
+  }
+}
+```
+
+## Step 5: variables.tf, first pass
+
+```hcl
+variable "cluster_name" {
+  type        = string
+  description = "EKS cluster name."
+}
+
+variable "iac_environment_tag" {
+  type        = string
+  description = "AWS tag to indicate environment name of each infrastructure object."
+}
+
+variable "name_prefix" {
+  type        = string
+  description = "Prefix to be used on each infrastructure object Name created in AWS."
+}
+
+variable "main_network_block" {
+  type        = string
+  description = "Base CIDR block to be used in our VPC."
+}
+
+variable "subnet_prefix_extension" {
+  type        = number
+  description = "CIDR block bits extension to calculate CIDR blocks of each subnetwork."
+}
+
+variable "zone_offset" {
+  type        = number
+  description = "CIDR block bits extension offset to calculate Public subnets, avoiding collisions with Private subnets."
+}
+```
+
+## Step 6: data.tf
+
+At this stage, only the availability zones and caller identity are needed. The cluster connection data sources are added later, in the Step 15 fix.
+
+```hcl
+data "aws_availability_zones" "available_azs" {
+  state = "available"
+}
+
+data "aws_caller_identity" "current" {}
+```
+
+## Step 7: eks.tf
+
+```hcl
+module "eks_cluster" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 19.0"
+
+  cluster_name    = var.cluster_name
+  cluster_version = "1.32"
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  cluster_endpoint_private_access = true
+  cluster_endpoint_public_access  = true
+
+  enable_irsa = true
+
+  self_managed_node_group_defaults = {
+    instance_type                          = var.asg_instance_types[0].instance_type
+    update_launch_template_default_version = true
+  }
+
+  self_managed_node_groups = local.self_managed_node_groups
+
+  create_aws_auth_configmap = true
+  manage_aws_auth_configmap = true
+  aws_auth_users            = concat(local.admin_user_map_users, local.developer_user_map_users)
+
+  tags = {
+    Environment = "prod"
+    Terraform   = "true"
+  }
+}
+```
+
+## Step 8: locals.tf
+
+Builds the admin and developer IAM user lists in the shape the EKS module expects, and defines the self-managed node group with a mixed spot instance policy.
+
+```hcl
+locals {
+  admin_user_map_users = [
+    for admin_user in var.admin_users :
+    {
+      userarn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${admin_user}"
+      username = admin_user
+      groups   = ["system:masters"]
+    }
+  ]
+
+  developer_user_map_users = [
+    for developer_user in var.developer_users :
+    {
+      userarn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${developer_user}"
+      username = developer_user
+      groups   = ["${var.name_prefix}-developers"]
+    }
+  ]
+
+  self_managed_node_groups = {
+    worker_group1 = {
+      name = "${var.cluster_name}-wg"
+
+      min_size     = var.autoscaling_minimum_size_by_az * length(data.aws_availability_zones.available_azs.zone_ids)
+      desired_size = var.autoscaling_minimum_size_by_az * length(data.aws_availability_zones.available_azs.zone_ids)
+      max_size     = var.autoscaling_maximum_size_by_az * length(data.aws_availability_zones.available_azs.zone_ids)
+
+      instance_type = var.asg_instance_types[0].instance_type
+
+      bootstrap_extra_args = "--kubelet-extra-args '--node-labels=node.kubernetes.io/lifecycle=spot'"
+
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            delete_on_termination = true
+            encrypted              = false
+            volume_size            = 10
+            volume_type             = "gp2"
+          }
+        }
+      }
+
+      use_mixed_instances_policy = true
+      mixed_instances_policy = {
+        instances_distribution = {
+          spot_instance_pools = 4
+        }
+        override = var.asg_instance_types
+      }
+    }
+  }
+}
+```
+
+## Step 9: variables.tf, remaining variables
+
+Appended to the same file from Step 5.
+
+```hcl
+variable "admin_users" {
+  type        = list(string)
+  description = "List of Kubernetes admins."
+}
+
+variable "developer_users" {
+  type        = list(string)
+  description = "List of Kubernetes developers."
+}
+
+variable "asg_instance_types" {
+  description = "List of EC2 instance machine types to be used in EKS."
+}
+
+variable "autoscaling_minimum_size_by_az" {
+  type        = number
+  description = "Minimum number of EC2 instances to autoscale our EKS cluster on each AZ."
+}
+
+variable "autoscaling_maximum_size_by_az" {
+  type        = number
+  description = "Maximum number of EC2 instances to autoscale our EKS cluster on each AZ."
+}
+```
+
+## Step 10: variables.tfvars
+
+The real values used, kept out of version control since `admin_users` and `developer_users` must reference IAM usernames that actually exist in the AWS account. A sanitized `variables.tfvars.example` is committed instead.
+
+```hcl
+cluster_name            = "lydiah-eks-cluster"
+iac_environment_tag     = "development"
+name_prefix             = "lydiah-eks"
+main_network_block      = "10.0.0.0/16"
+subnet_prefix_extension = 4
+zone_offset             = 8
+
+admin_users     = ["lydiah"]
+developer_users = ["devuser1"]
+
+asg_instance_types = [
+  { instance_type = "t3.small" },
+  { instance_type = "t2.small" },
+]
+
+autoscaling_minimum_size_by_az = 1
+autoscaling_maximum_size_by_az = 2
+```
+
+The maximum autoscaling size was set to 2 per availability zone rather than the higher value in the original material, since this is a learning cluster running on spot instances and does not need to scale to that many nodes.
+
+## Step 11: provider.tf
+
+```hcl
+provider "aws" {
+  region = "us-west-1"
+}
+
+provider "random" {
+}
+```
+
+The Kubernetes provider block is added later, in Step 15, once the cluster's connection data exists to configure it from.
+
+## Step 12 to 13: init and plan
+
+```bash
+terraform init
+terraform plan -var-file="variables.tfvars"
+```
+
+## Step 14: apply, and the expected first failure
+
+```bash
+terraform apply -var-file="variables.tfvars"
+```
+
+The VPC, the EKS cluster, and the self-managed node group all create successfully. The apply then fails on the aws-auth ConfigMap:
+
+```
+Error: Post "http://localhost/api/v1/namespaces/kube-system/configmaps": dial tcp [::1]:80: connectex: No connection could be made because the target machine actively refused it.
+```
+
+This happens because the Kubernetes provider has no connection details configured yet, so it defaults to `localhost`.
+
+## Step 15: fixing the aws-auth ConfigMap failure
+
+Two data sources are added to `data.tf`, to read the cluster's endpoint and authentication token. The first attempt referenced `module.eks_cluster.cluster_id`, which produced this error on apply:
+
+```
+Error: Missing required argument
+
+  with data.aws_eks_cluster.cluster,
+  on data.tf line 10, in data "aws_eks_cluster" "cluster":
+  10:   name = module.eks_cluster.cluster_id
+
+The argument "name" is required, but no definition was found.
+```
+
+Switching the reference to `module.eks_cluster.cluster_name` resolved it:
+
+```hcl
+data "aws_eks_cluster" "cluster" {
+  name = module.eks_cluster.cluster_name
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks_cluster.cluster_name
+}
+```
+
+The Kubernetes provider is then configured in `provider.tf` using that data:
+
+```hcl
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+```
+
+```bash
+terraform init
+terraform plan -var-file="variables.tfvars"
+terraform apply -var-file="variables.tfvars"
+```
+
+This creates the aws-auth ConfigMap successfully, since the cluster already exists in state from the first apply.
+
+## Step 16: generating the kubeconfig
 
 ```bash
 aws eks update-kubeconfig --name lydiah-eks-cluster --region us-west-1
+kubectl config current-context
+kubectl get nodes
 ```
 
-## Part B: deploying Jenkins with Helm
+Both worker nodes should show `STATUS: Ready`.
 
-Helm is installed using the official install script rather than building from source. The Jenkins chart is added from the official Jenkins Helm repository and installed into a dedicated `jenkins-namespace` namespace:
+## The EBS CSI driver gap
+
+This was not part of the original material. Deploying Jenkins later requires a PersistentVolumeClaim, which stayed `Pending` with the event `pod has unbound immediate PersistentVolumeClaims`. Self-managed node groups do not include the EBS CSI driver, and the in-tree `kubernetes.io/aws-ebs` provisioner no longer provisions anything without it, since Kubernetes 1.23.
+
+The fix required enabling IRSA on the cluster (already included in `eks.tf` above) and adding a new file, `ebs-csi-driver.tf`, containing an IAM role scoped to the CSI driver's service account and the addon itself:
+
+```hcl
+module "ebs_csi_irsa_role" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.0"
+
+  role_name             = "${var.cluster_name}-ebs-csi-driver"
+  attach_ebs_csi_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn                = module.eks_cluster.oidc_provider_arn
+      namespace_service_accounts  = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+}
+
+resource "aws_eks_addon" "ebs_csi_driver" {
+  cluster_name             = module.eks_cluster.cluster_name
+  addon_name               = "aws-ebs-csi-driver"
+  service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
+
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  depends_on = [module.eks_cluster]
+}
+```
+
+```bash
+terraform init
+terraform plan -var-file="variables.tfvars"
+terraform apply -var-file="variables.tfvars"
+kubectl get pods -n kube-system | grep ebs-csi
+```
+
+## The missing default StorageClass
+
+Also not part of the original material. Even with the CSI driver running, the PVC stayed pending with a different event: `no persistent volumes available for this claim and no storage class is set`. The cluster's existing `gp2` StorageClass, from the legacy in-tree provisioner, was never marked as the default, so PVCs created without an explicit storage class name have nothing to bind to.
+
+A new file, `storageclass.tf`, defines a StorageClass on the current `ebs.csi.aws.com` provisioner and marks it default:
+
+```hcl
+resource "kubernetes_storage_class" "ebs_gp3_default" {
+  metadata {
+    name = "gp3"
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+
+  storage_provisioner = "ebs.csi.aws.com"
+  volume_binding_mode = "WaitForFirstConsumer"
+  reclaim_policy      = "Delete"
+
+  parameters = {
+    type      = "gp3"
+    encrypted = "true"
+  }
+
+  depends_on = [aws_eks_addon.ebs_csi_driver]
+}
+```
+
+Because a PVC's storage class is set once at creation and cannot be patched afterward, the PVC and pod that were already stuck had to be deleted so the StatefulSet could recreate them against the new default:
+
+```bash
+terraform apply -var-file="variables.tfvars"
+kubectl delete pod my-jenkins-0 --namespace jenkins-namespace
+kubectl delete pvc my-jenkins --namespace jenkins-namespace
+kubectl get pvc --namespace jenkins-namespace
+kubectl get pods --namespace jenkins-namespace
+```
+
+The PVC then shows `STATUS: Bound` against the `gp3` class, and the pod reaches `2/2 Running`.
+
+## Step 17: Helm chart concept
+
+A Helm chart packages a set of Kubernetes manifest templates together with a values file. Installing a chart renders those templates with the given values and applies the result as one unit, tracked as a release, which can later be upgraded, rolled back, or removed as a whole rather than by hunting down individual manifests.
+
+## Step 18 to 19: installing and verifying Helm
+
+```bash
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+helm version --short
+```
+
+## Step 20 to 22: installing Jenkins
 
 ```bash
 helm repo add jenkinsci https://charts.jenkins.io
 helm repo update
 kubectl create namespace jenkins-namespace
 helm install my-jenkins jenkinsci/jenkins --namespace jenkins-namespace
+helm ls --namespace jenkins-namespace
 ```
 
-The `krew` plugin manager and its `konfig` plugin are used to demonstrate merging a separately generated kubeconfig into the default one, which is a common need when working across multiple clusters.
+Jenkins is installed into a dedicated `jenkins-namespace` namespace rather than the default namespace, for isolation from other workloads on the cluster.
 
-The Jenkins admin password is retrieved with:
+## Step 23 to 24: checking pods
+
+```bash
+kubectl get pods --namespace jenkins-namespace
+kubectl describe pod my-jenkins-0 --namespace jenkins-namespace
+```
+
+The pod runs two containers, `jenkins` and `config-reload`, plus two init containers.
+
+## Step 25: reading logs from a multi-container pod
+
+```bash
+kubectl logs my-jenkins-0 --namespace jenkins-namespace
+```
+
+The pod runs more than one container, so kubectl needs to know which one to read from. It defaults to `jenkins` automatically and prints which one it picked:
+
+```
+Defaulted container "jenkins" out of: jenkins, config-reload, config-reload-init (init), init (init)
+```
+
+To read a different container's logs explicitly:
+
+```bash
+kubectl logs my-jenkins-0 --namespace jenkins-namespace -c config-reload
+```
+
+## Step 26 to 29: krew, konfig, and merging kubeconfigs
+
+```bash
+(
+  set -x; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  KREW="krew-${OS}_${ARCH}" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+  tar zxvf "${KREW}.tar.gz" &&
+  ./"${KREW}" install krew
+)
+echo 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+kubectl krew install konfig
+```
+
+A separate kubeconfig file is generated and merged into the default one, to demonstrate the konfig workflow:
+
+```bash
+aws eks update-kubeconfig --name lydiah-eks-cluster --region us-west-1 --kubeconfig ./eks-kubeconfig
+kubectl konfig import --save ./eks-kubeconfig
+```
+
+## Step 30 to 31: confirming the merged context works
+
+```bash
+kubectl config get-contexts
+kubectl config use-context arn:aws:eks:us-west-1:835960997504:cluster/lydiah-eks-cluster
+kubectl get pods --namespace jenkins-namespace
+kubectl config current-context
+```
+
+## Step 32 to 33: retrieving the admin password and logging in
 
 ```bash
 kubectl exec --namespace jenkins-namespace -it svc/my-jenkins -c jenkins -- /bin/cat /run/secrets/additional/chart-admin-password && echo
-```
-
-The UI is reached by port-forwarding the service:
-
-```bash
 kubectl --namespace jenkins-namespace port-forward svc/my-jenkins 8080:8080
 ```
 
-## Issues encountered and fixes
-
-Several issues came up that were specific to running current tool versions rather than the versions the original material referenced.
-
-The EKS module's `cluster_id` output stopped returning the cluster name from module version 19 onward. Any reference to it had to be changed to the `cluster_name` output instead.
-
-Self-managed node groups do not come with the EBS CSI driver installed. Without it, the legacy `kubernetes.io/aws-ebs` in-tree provisioner cannot provision volumes, and any PersistentVolumeClaim depending on it stays pending indefinitely. The fix required enabling IRSA on the cluster module, creating an IAM role scoped to the CSI driver's service account through the `iam-role-for-service-accounts-eks` submodule, and installing `aws-ebs-csi-driver` as an EKS-managed addon.
-
-Even with the CSI driver running, the Jenkins PersistentVolumeClaim stayed pending because no StorageClass was marked as the cluster's default. A new StorageClass on the modern `ebs.csi.aws.com` provisioner was created and marked default. Because a PVC's storage class is set once at creation and cannot be patched afterward, the existing PVC and pod had to be deleted so the StatefulSet could recreate them against the new default.
-
-Running `kubectl logs` against the Jenkins pod no longer requires the `-c` flag to select a container, since current versions of kubectl read the pod's default-container annotation and select it automatically.
+With the port-forward running, the UI is reached at `http://127.0.0.1:8080` and logged into with username `admin` and the retrieved password.
 
 ## Cleanup
 
-Since this cluster carries hourly charges for the EKS control plane and worker nodes, it should not be left running. Jenkins and its volume are removed first so the underlying EBS volume is not orphaned when the cluster is destroyed:
+Jenkins and its volume are removed before the cluster, so the underlying EBS volume is not orphaned:
 
 ```bash
 helm uninstall my-jenkins --namespace jenkins-namespace
 kubectl delete pvc my-jenkins --namespace jenkins-namespace
 kubectl delete namespace jenkins-namespace
+```
+
+```bash
 terraform destroy -var-file="variables.tfvars"
 ```
 
-The S3 bucket and DynamoDB table used for Terraform state are not removed by `terraform destroy`, since the backend cannot delete the location storing its own state. These can be removed separately once the destroy is confirmed complete, or left in place for future use given their negligible cost.
+Verification that nothing billable remains:
+
+```bash
+aws eks list-clusters --region us-west-1
+aws ec2 describe-instances --region us-west-1 --filters "Name=tag:Name,Values=*lydiah-eks*" --query "Reservations[].Instances[].State.Name"
+aws ec2 describe-nat-gateways --region us-west-1 --filter "Name=state,Values=available"
+aws ec2 describe-addresses --region us-west-1
+aws ec2 describe-volumes --region us-west-1 --filters "Name=status,Values=available"
+```
+
+`terraform destroy` does not remove the S3 bucket or DynamoDB table backing the remote state, since the backend cannot delete the location storing its own state. These can be removed separately:
+
+```bash
+aws s3api delete-objects --bucket lydiah-eks-terraform-state \
+  --delete "$(aws s3api list-object-versions --bucket lydiah-eks-terraform-state \
+  --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}' --output json)"
+
+aws s3api delete-objects --bucket lydiah-eks-terraform-state \
+  --delete "$(aws s3api list-object-versions --bucket lydiah-eks-terraform-state \
+  --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}' --output json)"
+
+aws s3api delete-bucket --bucket lydiah-eks-terraform-state --region us-west-1
+aws dynamodb delete-table --table-name eks-terraform-state-locks --region us-west-1
+```
+
+The bucket has versioning enabled, so a plain `aws s3 rm --recursive` is not sufficient to empty it; the object versions and delete markers left behind have to be removed explicitly before the bucket itself can be deleted.
 
 ## Conclusion
 
-This project provided hands-on practice with the parts of running EKS that tutorials tend to skip over once they age: module output names changing between versions, add-ons that are not installed by default, and storage classes that require explicit configuration rather than working out of the box. Diagnosing each of these from the actual error output, rather than assuming the original material's steps would apply unchanged, was as much a part of the exercise as the deployment itself.
+Provisioning the cluster surfaced a real error at the aws-auth ConfigMap step, caused by the Kubernetes provider having no connection details until the cluster's own data was read back into it, and a second error from referencing the wrong module output for the cluster name. Deploying Jenkins surfaced two further gaps: the EBS CSI driver not being installed on the self-managed node group, and no StorageClass marked as default, both of which left the PersistentVolumeClaim stuck pending until diagnosed from the `kubectl describe` output and fixed directly in Terraform.
