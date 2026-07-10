@@ -56,6 +56,8 @@ aws s3api put-bucket-versioning \
   --bucket lydiah-eks-terraform-state \
   --versioning-configuration Status=Enabled
 ```
+<img width="1366" height="587" alt="eks" src="https://github.com/user-attachments/assets/0041c769-1bc7-486c-a494-d7f6c2ecfe70" />
+
 
 A DynamoDB lock table is not used here. Terraform's S3 backend supports native state locking directly (`use_lockfile`), which removes the need for a separate DynamoDB table for this purpose.
 
@@ -381,6 +383,8 @@ Error: Post "http://localhost/api/v1/namespaces/kube-system/configmaps": dial tc
 ```
 
 This happens because the Kubernetes provider has no connection details configured yet, so it defaults to `localhost`.
+<img width="1366" height="768" alt="furst error" src="https://github.com/user-attachments/assets/30a822fd-d0dc-4382-b94c-2d2d72bcd0a3" />
+
 
 ## Step 14: fixing the aws-auth ConfigMap failure
 
@@ -395,6 +399,8 @@ Error: Missing required argument
 
 The argument "name" is required, but no definition was found.
 ```
+<img width="1366" height="768" alt="4" src="https://github.com/user-attachments/assets/e7fd511e-101e-4a46-b8a1-79ff076b4606" />
+
 
 Switching the reference to `module.eks_cluster.cluster_name` resolved it:
 
@@ -425,6 +431,7 @@ terraform apply -var-file="variables.tfvars"
 ```
 
 This creates the aws-auth ConfigMap successfully, since the cluster already exists in state from the first apply.
+<img width="1366" height="768" alt="worked after the error" src="https://github.com/user-attachments/assets/50096bb3-3a4f-47a1-a5f2-e55499b4eddd" />
 
 ## Step 15: generating the kubeconfig
 
@@ -435,6 +442,8 @@ kubectl get nodes
 ```
 
 Both worker nodes should show `STATUS: Ready`.
+<img width="1366" height="768" alt="first kubectl get nodes" src="https://github.com/user-attachments/assets/dd17bfc7-bf62-43f4-b14e-cacd3ae418c8" />
+
 
 ## The EBS CSI driver gap
 
@@ -479,7 +488,7 @@ kubectl get pods -n kube-system | grep ebs-csi
 
 ## The missing default StorageClass
 
-Also not part of the original material. Even with the CSI driver running, the PVC stayed pending with a different event: `no persistent volumes available for this claim and no storage class is set`. The cluster's existing `gp2` StorageClass, from the legacy in-tree provisioner, was never marked as the default, so PVCs created without an explicit storage class name have nothing to bind to.
+Even with the CSI driver running, the PVC stayed pending with a different event: `no persistent volumes available for this claim and no storage class is set`. The cluster's existing `gp2` StorageClass, from the legacy in-tree provisioner, was never marked as the default, so PVCs created without an explicit storage class name have nothing to bind to.
 
 A new file, `storageclass.tf`, defines a StorageClass on the current `ebs.csi.aws.com` provisioner and marks it default:
 
@@ -516,6 +525,8 @@ kubectl get pods --namespace jenkins-namespace
 ```
 
 The PVC then shows `STATUS: Bound` against the `gp3` class, and the pod reaches `2/2 Running`.
+<img width="1366" height="768" alt="kubectl reading from kubeconfig" src="https://github.com/user-attachments/assets/2942532b-d1a1-4429-92f3-d99aabb5e2cf" />
+
 
 ## Step 16: Helm chart concept
 
@@ -550,6 +561,8 @@ kubectl describe pod my-jenkins-0 --namespace jenkins-namespace
 ```
 
 The pod runs two containers, `jenkins` and `config-reload`, plus two init containers.
+<img width="1366" height="768" alt="jenkins running" src="https://github.com/user-attachments/assets/0c66a41b-952f-4bb3-aa97-8d88c1646591" />
+
 
 ## Step 24: reading logs from a multi-container pod
 
@@ -592,6 +605,8 @@ A separate kubeconfig file is generated and merged into the default one, to demo
 aws eks update-kubeconfig --name lydiah-eks-cluster --region us-west-1 --kubeconfig ./eks-kubeconfig
 kubectl konfig import --save ./eks-kubeconfig
 ```
+<img width="1366" height="768" alt="kubectl reading from kubeconfig" src="https://github.com/user-attachments/assets/d68101c0-18ba-439e-9b64-99bfb8dc6b43" />
+
 
 ## Step 29 to 30: confirming the merged context works
 
@@ -610,6 +625,8 @@ kubectl --namespace jenkins-namespace port-forward svc/my-jenkins 8080:8080
 ```
 
 With the port-forward running, the UI is reached at `http://127.0.0.1:8080` and logged into with username `admin` and the retrieved password.
+<img width="1366" height="768" alt="jenk log" src="https://github.com/user-attachments/assets/a2ee5717-13a4-40e5-acd8-2fb69b572cef" />
+
 
 ## Cleanup
 
