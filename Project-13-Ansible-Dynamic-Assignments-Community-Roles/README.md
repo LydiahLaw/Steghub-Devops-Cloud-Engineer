@@ -16,7 +16,7 @@
 - [Troubleshooting](#troubleshooting)
 - [Conclusion](#conclusion)
 
----
+
 
 ## Project Overview
 
@@ -28,7 +28,7 @@ This project builds upon previous Ansible configurations by introducing **dynami
 - Configure conditional role execution based on environment variables
 - Manage multi-environment infrastructure efficiently
 
----
+
 ## Prerequisites
 
 Before starting, ensure you have:
@@ -148,7 +148,7 @@ Add the following content:
 
 <img width="1366" height="768" alt="dynamic-assignmentsenv-varsyml" src="https://github.com/user-attachments/assets/e36a5181-eba2-4cb4-94a0-24df53a63f95" />
 
----
+
 
 ### Step 3: Configure Environment Variables
 
@@ -180,7 +180,7 @@ environment: uat
 - Sets environment identifier for logging/tracking
 
 <img width="1366" height="768" alt="edit envvaruatyml" src="https://github.com/user-attachments/assets/f1fd506f-9a8c-4b3f-910a-eebcf5d0ea26" />
----
+
 
 ### Step 4: Install MySQL Community Role
 
@@ -262,7 +262,7 @@ mysql_users:
 
 <img width="1366" height="768" alt="MySQL role configuration" src="https://github.com/user-attachments/assets/ef72a313-cd8d-456c-b0e4-231a60d65cba" />
 
----
+
 
 ### Step 5: Setup Load Balancer Roles
 
@@ -317,7 +317,7 @@ load_balancer_is_required: false
 
 <img width="1366" height="768" alt="edit apacheyml" src="https://github.com/user-attachments/assets/4976d07d-5739-40e3-83dd-4dd87692cf5a" />
 
----
+
 
 ### Step 6: Configure Conditional Load Balancing
 
@@ -349,7 +349,7 @@ This prevents both load balancers from running simultaneously.
 
 <img width="1366" height="768" alt="addloadbalancerstositeyml" src="https://github.com/user-attachments/assets/2e5cd20c-406b-4ad7-8180-10fe4b6e79fa" />
 
----
+
 
 ### Step 7: Update Main Playbook
 
@@ -410,7 +410,6 @@ Replace with:
 
 <img width="1366" height="768" alt="updating my siteyml" src="https://github.com/user-attachments/assets/f6b31ce7-068c-4dbd-bde7-74e5ba46e79c" />
 
----
 
 ### Step 8: Deploy to UAT Environment
 
@@ -472,7 +471,6 @@ git checkout main
 git pull origin main
 ```
 
----
 
 ## Testing and Validation
 
@@ -549,7 +547,6 @@ Ansible will:
 
 <img width="1366" height="768" alt="apache working" src="https://github.com/user-attachments/assets/8ac5dd00-fd21-4c4e-9ecc-a8562af04c75" />
 
----
 
 ## Additional Verification Commands
 
@@ -569,7 +566,6 @@ ansible webservers -i inventory/uat -m shell -a "systemctl status httpd"
 
 <img width="1366" height="768" alt="httpd" src="https://github.com/user-attachments/assets/627453f5-e234-4e4f-b867-7e0560be5467" />
 
----
 
 ### Verify Apache Processes
 
@@ -585,7 +581,6 @@ ansible webservers -i inventory/uat -m shell -a "ps aux | grep httpd"
 
 <img width="1366" height="768" alt="apache healthy" src="https://github.com/user-attachments/assets/48d696e3-535f-4172-890a-8824d2faf85e" />
 
----
 
 ### Verify Server Hostnames
 
@@ -620,7 +615,6 @@ ansible webservers -i inventory/uat -m setup -a "filter=ansible_hostname"
 
 <img width="1366" height="768" alt="serverhostnames" src="https://github.com/user-attachments/assets/d39d70bf-32ae-4b24-b71c-a4b92eff2a01" />
 
----
 
 ### Debug Environment Variables
 
@@ -646,10 +640,6 @@ ansible webservers -i inventory/uat -m debug -a "var=env_name"
 
 <img width="1366" height="768" alt="testvariablessuccess" src="https://github.com/user-attachments/assets/e99c175c-d951-49e8-9cb2-6b463ec1a774" />
 
----
-
----
-
 
 ## Troubleshooting
 
@@ -668,15 +658,13 @@ ansible webservers -i inventory/uat -m debug -a "var=env_name"
 [webservers]
 ```
 
----
 
 ## Conclusion
 
 In this project, we successfully implemented dynamic variable management using Ansible's `include` module, allowing environment-specific configurations without code duplication. By leveraging community roles from Ansible Galaxy for MySQL, Nginx, and Apache, we significantly reduced development time while maintaining production-ready standards. The implementation of conditional role execution enables seamless switching between load balancers based on environment variables, demonstrating Infrastructure as Code best practices. This flexible, maintainable setup can now efficiently manage multiple environments (Dev, Staging, UAT, Production) from a single codebase, making infrastructure provisioning faster, more consistent, and scalable for real-world applications.
 
----
 
-> **Note:** This project is part of the **StegHub DevOps/Cloud Engineering Bootcamp**.
+> **Note:** This project is part of the **StegHub DevOps/Cloud Engineering Apprenticeship**.
 
 ## Project Repository
 
