@@ -668,6 +668,67 @@ aws s3api delete-bucket --bucket lydiah-eks-terraform-state --region us-west-1
 
 The bucket has versioning enabled, so a plain `aws s3 rm --recursive` is not sufficient to empty it; the object versions and delete markers left behind have to be removed explicitly before the bucket itself can be deleted.
 
+## Problems encountered during a fresh rebuild
+
+### Terraform tried to read the EKS cluster before creating it
+
+The original configuration used `data.aws_eks_cluster.cluster` to configure the Kubernetes provider. During a fresh apply, Terraform attempted to read `lydiah-eks-cluster` through the AWS API before the cluster had been created. The apply failed with:
+
+```text
+Error: reading EKS Cluster (lydiah-eks-cluster): couldn't find resource
+```
+
+Adding `depends_on = [module.eks_cluster]` to the data source caused a dependency cycle. The EKS module used the Kubernetes provider to manage resources inside the cluster, while the provider depended on a data source waiting for the entire module.
+
+I removed `data.aws_eks_cluster.cluster` and configured the Kubernetes provider with outputs from the EKS module:
+
+```hcl
+provider "kubernetes" {
+  host                   = module.eks_cluster.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks_cluster.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+```
+
+These outputs depend on the actual EKS cluster resource, so Terraform waits until the endpoint and certificate data exist.
+
+### Self-managed EC2 instances did not join the cluster
+
+The Auto Scaling Group launched two healthy `t3.large` instances, but `kubectl get nodes` returned:
+
+```text
+No resources found
+```
+
+The EKS control plane was active, but the `aws-auth` ConfigMap did not exist. Both of these settings were disabled in the EKS module:
+
+```hcl
+create_aws_auth_configmap = false
+manage_aws_auth_configmap = false
+```
+
+I changed both values to `true`. Terraform created `aws-auth` and mapped the self-managed node IAM role to the `system:bootstrappers` and `system:nodes` groups. Both instances then joined the cluster and became `Ready`.
+
+### The EBS CSI add-on became degraded
+
+The EBS CSI add-on timed out in the `DEGRADED` state with this health issue:
+
+```text
+InsufficientNumberOfReplicas
+The add-on is unhealthy because all deployments have all pods unscheduled no nodes available to schedule pods
+```
+
+The add-on was not the root problem. Its pods could not run because the self-managed instances had not been authorized to join the cluster.
+
+After fixing `aws-auth`, I ran Terraform again. The add-on became `ACTIVE`, its controller and node pods started successfully, and the `gp3` storage class was created.
+
+### The original worker nodes were too small for Artifactory
+
+The original node group used `t3.small` and `t2.small` instances. The EKS cluster could run on them, but Artifactory could not. Its pods remained in `Pending` and initialization states while the nodes experienced memory pressure and heavy memory overcommit.
+
+I changed the mixed instance types to `t3.large` and `t3a.large`. The two larger nodes provided enough capacity for Artifactory, PostgreSQL, the Nginx Ingress Controller, and the Kubernetes system workloads.
+
+
 ## Conclusion
 
 Provisioning the cluster surfaced a real error at the aws-auth ConfigMap step, caused by the Kubernetes provider having no connection details until the cluster's own data was read back into it, and a second error from referencing the wrong module output for the cluster name. Deploying Jenkins surfaced two further gaps: the EBS CSI driver not being installed on the self-managed node group, and no StorageClass marked as default, both of which left the PersistentVolumeClaim stuck pending until diagnosed from the `kubectl describe` output and fixed directly in Terraform.

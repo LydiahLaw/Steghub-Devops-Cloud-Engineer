@@ -35,9 +35,9 @@ locals {
           device_name = "/dev/xvda"
           ebs = {
             delete_on_termination = true
-            encrypted              = false
-            volume_size            = 10
-            volume_type             = "gp2"
+            encrypted             = false
+            volume_size           = 50
+            volume_type           = "gp3"
           }
         }
       }

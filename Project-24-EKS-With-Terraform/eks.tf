@@ -24,8 +24,8 @@ module "eks_cluster" {
   self_managed_node_groups = local.self_managed_node_groups
 
   # aws-auth configmap
-  create_aws_auth_configmap = false
-  manage_aws_auth_configmap = false
+  create_aws_auth_configmap = true
+  manage_aws_auth_configmap = true
   aws_auth_users            = concat(local.admin_user_map_users, local.developer_user_map_users)
 
   tags = {
