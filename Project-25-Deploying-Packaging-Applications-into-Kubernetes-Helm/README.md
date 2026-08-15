@@ -131,7 +131,6 @@ kubectl get storageclass
 
 The `gp3` class used `ebs.csi.aws.com`, allowed volume expansion, and was marked as the default storage class.
 
-Screenshot placeholder: `images/01-eks-nodes-and-storage-class.png`
 
 ## Deploying Artifactory with Helm
 
@@ -184,7 +183,7 @@ helm upgrade --install artifactory jfrog/artifactory \
   --set nginx.generateSelfSignedCert=true
 ```
 
-Screenshot placeholder: `images/02-artifactory-helm-installation.png`
+<img width="1366" height="768" alt="installed artifactory" src="https://github.com/user-attachments/assets/fc8bcea7-ad48-4d54-833b-bcef80c93a82" />
 
 ## Checking the Artifactory deployment
 
@@ -225,7 +224,7 @@ The final check showed every pod running and every container ready:
 kubectl get pods -n tools
 ```
 
-Screenshot placeholder: `images/03-artifactory-pods-running.png`
+<img width="1366" height="768" alt="ingress controller" src="https://github.com/user-attachments/assets/b8b2b020-bdad-4ba6-9f15-3aec93bad4d3" />
 
 ## Installing the Nginx Ingress Controller
 
@@ -289,7 +288,6 @@ kubectl get pods,service -n ingress-nginx
 kubectl get ingressclass
 ```
 
-Screenshot placeholder: `images/04-ingress-controller-running.png`
 
 ## Creating the Artifactory Ingress
 
@@ -355,6 +353,8 @@ curl -I --max-time 30 \
 ```
 
 The request returned `HTTP/1.1 200 OK`, which confirmed that Nginx routed the request to Artifactory correctly.
+<img width="1366" height="768" alt="curlmax" src="https://github.com/user-attachments/assets/70958c75-dd5b-4d80-a8b2-e5d4ea399893" />
+
 
 ## Configuring Route 53
 
@@ -384,7 +384,8 @@ curl -I --max-time 30 \
 
 The domain returned `HTTP/1.1 200 OK`.
 
-Screenshot placeholder: `images/05-route53-record.png`
+<img width="1366" height="768" alt="cname" src="https://github.com/user-attachments/assets/ebf83f12-67d2-488a-9cfb-470725fca839" />
+
 
 ## Completing the Artifactory setup
 
@@ -407,9 +408,10 @@ I completed the onboarding wizard by:
 
 No passwords, licence keys, master keys, or join keys are stored in this repository.
 
-Screenshot placeholder: `images/06-artifactory-license-activated.png`
+<img width="1366" height="653" alt="tooling art" src="https://github.com/user-attachments/assets/4be62c31-e53c-46f1-b25a-f394d8097e01" />
+<img width="1366" height="608" alt="art dashboard" src="https://github.com/user-attachments/assets/0eea3d0e-97f0-49a2-bbdb-8a73fb142c1f" />
 
-Screenshot placeholder: `images/07-artifactory-dashboard.png`
+
 
 ## Problems encountered and how I fixed them
 
@@ -433,14 +435,6 @@ The EKS control plane was active, but the `aws-auth` ConfigMap did not exist:
 kubectl get configmap aws-auth -n kube-system -o yaml
 ```
 
-In the EKS Terraform module, both settings were disabled:
-
-```hcl
-create_aws_auth_configmap = false
-manage_aws_auth_configmap = false
-```
-
-I changed both values to `true`. Terraform then created the ConfigMap and mapped the self-managed node IAM role to `system:bootstrappers` and `system:nodes`. Both instances joined the cluster and became `Ready` shortly afterward.
 
 ### The EBS CSI add-on became degraded
 
