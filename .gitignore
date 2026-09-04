@@ -6,14 +6,12 @@
 
 # Terraform directories
 .terraform/
-.terraform.lock.hcl
 
 # Sensitive variable files
 *.tfvars
 
 # Terraform directories and generated files
 .terraform/
-.terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
 *.tfstate

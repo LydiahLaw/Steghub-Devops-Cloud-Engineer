@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: artifactory-ingress
+  namespace: tools
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 500m
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/private-key-rotation-policy: Always
+  labels:
+    name: artifactory
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - tooling.artifactory.lydiahnganga.cloud
+      secretName: tooling.artifactory.lydiahnganga.cloud
+  rules:
+    - host: tooling.artifactory.lydiahnganga.cloud
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: artifactory-artifactory-nginx
+                port:
+                  number: 80

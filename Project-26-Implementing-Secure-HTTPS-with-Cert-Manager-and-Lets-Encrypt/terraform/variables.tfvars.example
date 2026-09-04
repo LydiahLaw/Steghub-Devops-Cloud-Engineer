@@ -1,0 +1,3 @@
+hosted_zone_arn = "arn:aws:route53:::hostedzone/YOUR_HOSTED_ZONE_ID"
+acme_email      = "your-email@example.com"
+domain          = "your-subdomain.your-domain.com"
