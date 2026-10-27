@@ -38,3 +38,4 @@ Project-21-Kubernetes-From-Scratch-On-AWS/encryption-config.yaml
 *.key
 *.csr
 *.kubeconfig
+tooling-src/

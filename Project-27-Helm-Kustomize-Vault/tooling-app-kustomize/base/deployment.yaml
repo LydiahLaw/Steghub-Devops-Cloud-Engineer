@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tooling-deployment
+  labels:
+    app: tooling
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tooling
+  template:
+    metadata:
+      labels:
+        app: tooling
+    spec:
+      containers:
+        - name: tooling
+          image: tooling-app:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef: { name: tooling-db-credentials, key: DB_HOST }
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef: { name: tooling-db-credentials, key: DB_USER }
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: tooling-db-credentials, key: DB_PASSWORD }
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef: { name: tooling-db-credentials, key: DB_NAME }
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"

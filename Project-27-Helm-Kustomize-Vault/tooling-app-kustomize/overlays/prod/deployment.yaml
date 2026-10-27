@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tooling-deployment
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: tooling
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "300m"
+            limits:
+              memory: "256Mi"
+              cpu: "600m"
