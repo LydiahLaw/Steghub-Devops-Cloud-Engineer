@@ -4,3 +4,26 @@ metadata:
   name: tooling-deployment
 spec:
   replicas: 3
+  template:
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "tooling-role"
+        vault.hashicorp.com/agent-inject-status: "update"
+        vault.hashicorp.com/agent-requests-cpu: "50m"
+        vault.hashicorp.com/agent-limits-cpu: "100m"
+        vault.hashicorp.com/agent-requests-mem: "32Mi"
+        vault.hashicorp.com/agent-limits-mem: "64Mi"
+        vault.hashicorp.com/agent-inject-secret-database-cred.txt: "app/data/database/config/dev"
+        vault.hashicorp.com/agent-inject-template-database-cred.txt: |
+          {{- with secret "app/data/database/config/dev" -}}
+          export DB_HOST="{{ .Data.data.host }}"
+          export DB_USER="{{ .Data.data.username }}"
+          export DB_PASSWORD="{{ .Data.data.password }}"
+          export DB_NAME="{{ .Data.data.dbname }}"
+          {{- end -}}
+    spec:
+      serviceAccountName: tooling-sa
+      containers:
+        - name: tooling
+          command: ["/bin/sh", "-c", ". /vault/secrets/database-cred.txt && exec start-apache"]

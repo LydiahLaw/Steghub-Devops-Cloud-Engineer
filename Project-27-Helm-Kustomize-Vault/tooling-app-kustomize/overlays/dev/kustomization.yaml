@@ -8,9 +8,12 @@ labels:
 resources:
   - ../../base
   - namespace.yaml
+  - service-account.yaml
 patches:
   - path: deployment.yaml
-secretGenerator:
-  - name: tooling-db-credentials
-    envs:
-      - db.env
+  - target:
+      kind: Deployment
+      name: tooling-deployment
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/env
