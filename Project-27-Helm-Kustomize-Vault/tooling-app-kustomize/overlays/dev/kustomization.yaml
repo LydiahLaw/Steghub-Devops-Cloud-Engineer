@@ -17,3 +17,7 @@ patches:
     patch: |-
       - op: remove
         path: /spec/template/spec/containers/0/env
+images:
+  - name: tooling-app
+    newName: 835960997504.dkr.ecr.us-west-1.amazonaws.com/tooling-app
+    newTag: "1.0.0"

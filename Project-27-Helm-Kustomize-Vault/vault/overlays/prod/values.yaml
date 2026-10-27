@@ -1,0 +1,97 @@
+server:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Soft anti-affinity: spread across nodes when possible (2-node cluster, 3 pods)
+  affinity: |
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: {{ template "vault.name" . }}
+                app.kubernetes.io/instance: "{{ .Release.Name }}"
+                component: server
+            topologyKey: kubernetes.io/hostname
+
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 500m
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      cert-manager.io/private-key-rotation-policy: Always
+    pathType: Prefix
+    activeService: true
+    hosts:
+      - host: vault.lydiahnganga.cloud
+        paths: []
+    tls:
+      - secretName: vault-tls
+        hosts:
+          - vault.lydiahnganga.cloud
+
+  # KMS key ARN comes from the vault-kms Secret (generated from .env)
+  extraSecretEnvironmentVars:
+    - envName: VAULT_SEAL_TYPE
+      secretName: vault-kms
+      secretKey: VAULT_SEAL_TYPE
+    - envName: VAULT_AWSKMS_SEAL_KEY_ID
+      secretName: vault-kms
+      secretKey: VAULT_AWSKMS_SEAL_KEY_ID
+
+  dataStorage:
+    enabled: true
+    size: 2Gi
+
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |
+        ui = true
+
+        listener "tcp" {
+          tls_disable     = 1
+          address         = "[::]:8200"
+          cluster_address = "[::]:8201"
+        }
+
+        storage "raft" {
+          path = "/vault/data"
+          retry_join {
+            leader_api_addr = "http://vault-0.vault-internal:8200"
+          }
+          retry_join {
+            leader_api_addr = "http://vault-1.vault-internal:8200"
+          }
+          retry_join {
+            leader_api_addr = "http://vault-2.vault-internal:8200"
+          }
+        }
+
+        seal "awskms" {
+          region = "us-west-1"
+        }
+
+        service_registration "kubernetes" {}
+
+  serviceAccount:
+    create: true
+    name: vault-kms
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::835960997504:role/vaultKMS
+
+ui:
+  enabled: true
+  serviceType: ClusterIP
+  externalPort: 8200
+  targetPort: 8200
