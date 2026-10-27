@@ -27,7 +27,7 @@
 12. [Blockers and Known Limitations](#blockers-and-known-limitations)
 13. [Conclusion](#conclusion)
 
----
+
 
 ## Project Overview
 
@@ -37,11 +37,11 @@ Three major improvements are made:
 
 - Terraform state is moved from local storage to a remote S3 backend with DynamoDB state locking, enabling team collaboration
 - The flat collection of `.tf` files is broken into a proper module structure, making the codebase reusable and easier to navigate
-- Advanced Terraform features — dynamic blocks, map/lookup functions, and conditional expressions — are applied to reduce repetition and make the configuration region-aware
+- Advanced Terraform features — dynamic blocks, map/lookup functions, and conditional expressions are applied to reduce repetition and make the configuration region-aware
 
 The infrastructure itself remains the same multi-tier AWS architecture from Project 17: VPC, public and private subnets, NAT Gateway, ALBs, Auto Scaling Groups, EFS, and RDS MySQL.
 
----
+
 
 ## Objectives
 
@@ -53,7 +53,7 @@ The infrastructure itself remains the same multi-tier AWS architecture from Proj
 - Break all infrastructure resources into logical child modules
 - Separate providers, backend, data sources, and outputs into dedicated root-level files
 
----
+
 
 ## Prerequisites
 
@@ -64,7 +64,7 @@ The infrastructure itself remains the same multi-tier AWS architecture from Proj
 - An existing key pair named `terraform` in AWS EC2
 - tflint installed for linting
 
----
+
 
 ## Architecture
 
@@ -85,7 +85,7 @@ The refactored codebase provisions the same infrastructure as Project 17:
 - **RDS MySQL 8.0** (`db.t3.micro`, Multi-AZ)
 - **IAM role and instance profile** for EC2 instances
 
----
+
 
 ## Phase 1 — S3 Remote Backend and State Locking
 
@@ -181,9 +181,9 @@ terraform {
 After migration, the local `terraform.tfstate` file is empty. The real state lives in S3 at `global/s3/terraform.tfstate`.
 <img width="1366" height="768" alt="object created" src="https://github.com/user-attachments/assets/f43ca16a-def7-48e6-8c1e-5caf2c7c7c91" />
 
----
 
-## Phase 2 — Advanced Terraform Concepts
+
+## Phase 2 - Advanced Terraform Concepts
 
 ### Dynamic Blocks for Security Groups
 
@@ -299,7 +299,6 @@ count = var.preferred_number_of_public_subnets == null ? length(var.availability
 
 If `preferred_number_of_public_subnets` is null, Terraform creates one subnet per available AZ. Otherwise it uses the specified number. This prevents hardcoding subnet counts while still allowing explicit control when needed.
 
----
 
 ## Phase 3 — Module Refactoring
 
@@ -420,7 +419,6 @@ Shell scripts (`bastion.sh`, `nginx.sh`, `wordpress.sh`, `tooling.sh`) are copie
 
 No standalone EC2 instances exist in this project — all compute is managed via Auto Scaling Groups in the autoscaling module. This module is scaffolded for future use.
 
----
 
 ## Root Configuration
 
@@ -435,7 +433,6 @@ No standalone EC2 instances exist in this project — all compute is managed via
 | `outputs.tf` | Exposes module outputs at root level |
 | `roles.tf` | IAM role, policy, attachment, and instance profile (stays at root) |
 
----
 
 ## Verification and Pro Tips
 
@@ -486,7 +483,6 @@ After apply completes, confirm the following in the AWS Console:
 
 **`roles.tf` at root level** — IAM resources are cross-cutting and do not belong cleanly to any single module. Keeping them at root avoids circular dependencies and allows direct reference in module calls (`aws_iam_instance_profile.ip.name`).
 
----
 
 ## How to Use
 
@@ -541,13 +537,11 @@ terraform destroy \
 
 > The S3 bucket and DynamoDB table are excluded from destroy because `prevent_destroy = true` protects the state bucket. These resources are intentionally kept for future projects.
 
----
 
 ## Blockers and Known Limitations
 
 **Userdata scripts are not functional** — The `bastion.sh`, `nginx.sh`, `wordpress.sh`, and `tooling.sh` scripts passed to launch templates via `user_data` do not contain the actual EFS DNS endpoints, ALB DNS names, or RDS endpoints. These values are only known after `terraform apply` completes, creating a chicken-and-egg problem. The websites will not be reachable after deployment.
 
----
 
 ## Conclusion
 
