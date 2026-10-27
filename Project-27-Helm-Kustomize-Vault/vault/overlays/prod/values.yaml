@@ -1,3 +1,7 @@
+injector:
+  # EKS node SG only allows the control plane to reach webhooks on 443/4443/6443/8443/9443/10250
+  port: 8443
+
 server:
   resources:
     requests:

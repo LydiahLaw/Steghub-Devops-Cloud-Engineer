@@ -4,3 +4,4 @@ charts/
 vault-init-keys.txt
 .terraform/
 aurora.env
+vault-eks-init-keys.txt

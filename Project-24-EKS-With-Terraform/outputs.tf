@@ -27,3 +27,17 @@ output "oidc_provider_url" {
   description = "OIDC issuer URL for the cluster (without the https:// scheme), used in IRSA trust policy conditions"
   value       = module.eks_cluster.cluster_oidc_issuer_url
 }
+output "vpc_id" {
+  description = "VPC ID, used by Project 27 to place Aurora in the same network"
+  value       = module.vpc.vpc_id
+}
+
+output "private_subnets" {
+  description = "Private subnet IDs, used for the Aurora DB subnet group"
+  value       = module.vpc.private_subnets
+}
+
+output "vpc_cidr_block" {
+  description = "VPC CIDR, used to allow MySQL traffic from inside the VPC"
+  value       = module.vpc.vpc_cidr_block
+}
