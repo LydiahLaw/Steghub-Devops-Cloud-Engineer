@@ -21,4 +21,6 @@ get_helm.sh
 
 # Editor/OS noise
 .vscode/
-.DS_Store*.tfplan
+.DS_Store
+
+*.tfplan
