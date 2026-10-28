@@ -1,8 +1,10 @@
-# Streamlining Tooling Application Deployments with Helm, Kustomize and Vault
+# Secrets Management on Amazon EKS with HashiCorp Vault, AWS KMS Auto-Unseal and Aurora Serverless v2
 
-This project deploys a PHP tooling application into Kubernetes across three environments (dev, sit, prod) using Kustomize overlays, installs HashiCorp Vault in High Availability mode with the official Helm chart, and injects the application's database credentials from Vault at runtime so no credentials live in the manifests. The final run is on Amazon EKS with Amazon Aurora as the database and AWS KMS auto-unsealing Vault.
+**Multi-environment deployments with Kustomize and Helm, and zero hardcoded database credentials.**
 
-The course material for this project was written in 2022. I built it in October 2026, so I used current versions throughout and documented every place where the original steps no longer worked or needed correcting.
+This project deploys a PHP tooling application on Amazon EKS across three environments (dev, sit, prod) using Kustomize overlays, installs HashiCorp Vault in High Availability mode with the official Helm chart, and injects the application's database credentials from Vault at runtime so no credentials live in the manifests. 
+
+Vault auto-unseals with AWS KMS through an IRSA role, the database runs on Aurora Serverless v2, the image is stored in Amazon ECR, and all AWS infrastructure is provisioned with Terraform.
 
 ## Table of Contents
 
@@ -17,7 +19,7 @@ The course material for this project was written in 2022. I built it in October 
 9. [Teardown](#teardown)
 10. [Design Decisions](#design-decisions)
 11. [Challenges and How I Solved Them](#challenges-and-how-i-solved-them)
-12. [Corrections to the Original Course Material](#corrections-to-the-original-course-material)
+12. [Outdated Documentation Pitfalls](#outdated-documentation-pitfalls)
 13. [Cost](#cost)
 14. [What I Would Improve Next](#what-i-would-improve-next)
 15. [Key Takeaways](#key-takeaways)
@@ -63,8 +65,8 @@ The editable source is embedded in the PNG, so it can be opened and updated dire
 |---|---|---|
 | kind | 0.33.0 | Local cluster, Kubernetes 1.37 |
 | kubectl (with built-in Kustomize) | 1.36.1 / Kustomize 5.8.1 | `kubectl kustomize --enable-helm` renders Helm charts |
-| Helm | 4.3.1 | The course assumes Helm 3; no changes were needed |
-| Vault Helm chart | 0.34.1 (Vault 2.0.4) | Course pinned 0.28.1 |
+| Helm | 4.3.1 | Most guides assume Helm 3; no changes were needed |
+| Vault Helm chart | 0.34.1 (Vault 2.0.4) | Older guides pin 0.28.1 |
 | Vault Agent Injector | 1.7.6 | |
 | MySQL (local) | 8.4 LTS | Stand-in for Aurora on kind |
 | Aurora MySQL | 8.0.mysql_aurora.3.10.6 | Serverless v2, scale to zero |
@@ -106,7 +108,7 @@ EKS with its supporting resources costs roughly $1 an hour. To keep the bill sma
 
 1. **Local (free):** build and test every Kubernetes piece on a kind cluster, including Vault, Kubernetes auth and secret injection.
 2. **Prepare (free):** write and validate the Terraform and the EKS specific overlays without applying anything.
-3. **Run on AWS (paid):** apply, swap the database host and unseal method, verify, take screenshots and destroy in one sitting.
+3. **Run on AWS (paid):** apply, swap the database host and unseal method, verify and destroy in one sitting.
 
 By the time I touched AWS, the remaining work was mostly applying tested code, so the EKS session took about two and a half hours.
 
@@ -187,7 +189,7 @@ Each overlay generates its own `tooling-db-credentials` Secret from a gitignored
 
 ### 5. Vault HA with Raft, installed through Helm and Kustomize
 
-Following the course structure, Vault has a `base` (namespace) and overlays. I added a `local` overlay for kind so the `dev`, `sit` and `prod` overlays could stay exactly as intended for EKS.
+Vault follows the same pattern as the app, with a `base` (namespace) and overlays. I added a `local` overlay for kind so the `dev`, `sit` and `prod` overlays could stay exactly as intended for EKS.
 
 ```yaml
 # vault/overlays/local/kustomization.yaml
@@ -279,7 +281,7 @@ vault.hashicorp.com/agent-inject-template-database-cred.txt: |
   {{- end -}}
 ```
 
-The course suggests going further than reading the file by hand and having the app ingest it automatically. The container now sources the file before starting Apache, so the variables are in the web server's environment:
+Rather than reading the file by hand, the app ingests it automatically. The container sources the file before starting Apache, so the variables are in the web server's environment:
 
 ```yaml
 command: ["/bin/sh", "-c", ". /vault/secrets/database-cred.txt && exec start-apache"]
@@ -317,7 +319,7 @@ I also removed the base's Secret references for dev with a JSON patch, so in dev
 
 **Aurora initialisation Job.** A Kubernetes Job replaces the local init script on EKS. It waits for Aurora to respond (Serverless v2 may be paused), creates the three databases and users, and only loads the schema if the `users` table does not already exist, so it is safe to re-run.
 
-**Vault EKS overlays.** `dev`, `sit` and `prod` each have the course's `.env`, `kustomization.yaml` (with a `vault-kms` secretGenerator), `namespace.yaml` and `values.yaml`. Key settings:
+**Vault EKS overlays.** `dev`, `sit` and `prod` each have a `.env`, `kustomization.yaml` (with a `vault-kms` secretGenerator), `namespace.yaml` and `values.yaml`. Key settings:
 
 ```yaml
 injector:
@@ -380,7 +382,7 @@ The resources created by this project's Terraform, as seen in the AWS console:
 
 ![Vault KMS auto-unseal and Raft peers](images/13-vault-kms-auto-unseal.png)
 
-9. Pointed `vault-dev.lydiahnganga.cloud` at the NLB. cert-manager issued a Let's Encrypt certificate and I configured Vault from my laptop with the Vault CLI over HTTPS, as the course describes, storing the Aurora endpoint as the dev host.
+9. Pointed `vault-dev.lydiahnganga.cloud` at the NLB. cert-manager issued a Let's Encrypt certificate and I configured Vault from my laptop with the Vault CLI over HTTPS, storing the Aurora endpoint as the dev host.
 
 ![Vault UI over HTTPS](images/14-vault-ui-https.png)
 
@@ -406,7 +408,7 @@ The only things left are the Route 53 hosted zone (kept on purpose) and the KMS 
 | Decision | Chosen | Over | Why |
 |---|---|---|---|
 | Local cluster | kind | minikube | Runs nodes as Docker containers, supports multi-node clusters from one config file, and is quick to delete and recreate |
-| App configuration | Kustomize overlays | A Helm chart for the app | The app is our own simple manifests. Overlays keep plain YAML with no template logic, which matches the course's argument that Helm adds most value for community packages |
+| App configuration | Kustomize overlays | A Helm chart for the app | The app is our own simple manifests. Overlays keep plain YAML with no template logic, and Helm adds the most value for packaged community software |
 | Vault installation | Helm chart driven by Kustomize `helmCharts` | Hand-written Vault manifests | Vault needs a StatefulSet, RBAC, a webhook, several services and a PDB. The official chart packages all of it, and Kustomize still lets each environment keep its own values |
 | Image tag per environment | Kustomize `images` field | A patch file per environment | One line per overlay, and it is the purpose-built transformer for image names and tags |
 | Credentials before Vault | `secretGenerator` from gitignored env files | Hand-written Secret YAML | Keeps values out of Git, and the hash suffix triggers a rollout when a value changes |
@@ -418,13 +420,13 @@ The only things left are the Route 53 hosted zone (kept on purpose) and the KMS 
 | Unseal method on AWS | AWS KMS auto-unseal | Shamir keys | Pods unseal themselves after restarts, with no human holding keys. Locally I saw exactly why this matters when every restart sealed Vault again |
 | Vault AWS access | IRSA role scoped to one service account and one key | Node IAM role or access keys | Least privilege, and no credentials in values files |
 | Delivering secrets to the app | Vault Agent Injector | Kubernetes Secrets | Credentials never exist as a Kubernetes object, access is controlled by Vault policy, and tokens are short-lived |
-| Loading the injected file | Sourcing it in the container command | Running `source` manually through `kubectl exec` | Automatic on every pod start, and it is the follow-up the course suggests |
-| Container registry | Amazon ECR | Docker Hub | Same account and IAM as the cluster, scan on push, removed by `terraform destroy`, and the course image is no longer available |
+| Loading the injected file | Sourcing it in the container command | Running `source` manually through `kubectl exec` | Automatic on every pod start, with no manual step |
+| Container registry | Amazon ECR | Docker Hub | Same account and IAM as the cluster, scan on push, removed by `terraform destroy`, and the previously published image is no longer available |
 | Image naming | ECR name used locally and on EKS | Separate local and EKS overlays | One set of manifests. Locally the image is tagged with the ECR name and loaded into kind |
 | Vault HA on 2 nodes | Soft (preferred) anti-affinity | A third node | Spreads pods when possible without paying for an extra t3.large. A production cluster should keep the hard rule with 3 or more nodes |
 | Injector webhook port | Move the injector to 8443 | Adding a security group rule for 8080 | 8443 is already allowed by the EKS module's recommended node rules, so the fix is one value with no infrastructure change |
 | Infrastructure reuse | `terraform_remote_state` from Project 24 | Hardcoding VPC and OIDC values | Values stay correct every time the cluster is rebuilt |
-| Load balancer | NLB | Classic ELB (the default) | Current AWS load balancer type, and what the course's Vault values expect |
+| Load balancer | NLB | Classic ELB (the default) | Current AWS load balancer type with lower latency and static IPs per AZ |
 | Ingress controller | ingress-nginx | Gateway API implementation | Already used in Projects 25 and 26. The project has since been retired by Kubernetes, so the Gateway API is the path for future projects |
 | EKS version | Keep 1.32 | Upgrade to 1.35 | 1.32 is in extended support ($0.60/hr instead of $0.10/hr), but upgrading means moving from module v19 and Amazon Linux 2 nodes to v20 and AL2023. For one short session the extra cost was about $2.50, so I kept the upgrade as a separate task |
 | Local Vault replicas | 1 | 3 | My laptop could not run three Vault pods plus MySQL. The Raft configuration is identical, and HA was shown on EKS |
@@ -435,7 +437,7 @@ The only things left are the Route 53 hosted zone (kept on purpose) and the KMS 
 
 **2. The laptop ran out of resources.** My WSL configuration limited Docker to 2 GB of RAM. With four kind nodes, the API server returned `TLS handshake timeout`, a watch stream dropped, and Vault pods sat in `ContainerCreating` for over 10 minutes. I reduced the cluster to two nodes, raised the WSL limit to 3 GB (the laptop has 8 GB, so giving more would have starved Windows), scaled the app to one replica while working on Vault, and ran a single Vault replica locally.
 
-**3. A prod pod stuck in `Pending`.** `kubectl describe` showed `Insufficient cpu`. Dev, sit and prod together requested more CPU than the worker had. This was Kubernetes enforcing requests correctly, so I took the screenshot and removed sit and prod to free capacity.
+**3. A prod pod stuck in `Pending`.** `kubectl describe` showed `Insufficient cpu`. Dev, sit and prod together requested more CPU than the worker had. This was Kubernetes enforcing requests correctly, not a configuration error. I confirmed all three overlays rendered correctly, then removed sit and prod to free capacity for the next steps.
 
 **4. The app showed a database connection error right after a rollout.** `kubectl port-forward svc/...` does not load balance. It picks one pod when it starts, and it had picked the last old pod from before the credentials were added. Once that pod terminated and I restarted the port-forward, the login worked.
 
@@ -445,26 +447,24 @@ The only things left are the Route 53 hosted zone (kept on purpose) and the KMS 
 
 **7. Unseal progress did not move.** Vault ignores a key share it has already received in the current attempt. My first key had failed because of the path issue above, so resubmitting the second key did nothing. Submitting a different share completed the unseal.
 
-**8. Vault sealed itself after an unexpected shutdown.** My laptop lost power, and when the cluster came back, Vault was sealed again (its data was intact). With Shamir unseal, every restart needs a person with keys. This was the clearest motivation for KMS auto-unseal on EKS.
+**8. Terraform `Unauthorized` on the `aws-auth` ConfigMap.** I applied a saved plan. The Kubernetes provider's EKS token is generated at plan time and is only valid for 15 minutes, and the cluster took longer than that to build. Everything else had been created, so a fresh plan and immediate apply finished the last resource. For later applies I let `terraform apply` plan and apply in one run.
 
-**9. Terraform `Unauthorized` on the `aws-auth` ConfigMap.** I applied a saved plan. The Kubernetes provider's EKS token is generated at plan time and is only valid for 15 minutes, and the cluster took longer than that to build. Everything else had been created, so a fresh plan and immediate apply finished the last resource. For later applies I let `terraform apply` plan and apply in one run.
+**9. Vault Agent was not injected on EKS.** The same manifests that produced 2/2 pods on kind produced 0/1 pods on EKS that crashed because `/vault/secrets/database-cred.txt` did not exist. The injector is a mutating webhook, so the EKS control plane must reach the injector pod. The node security group from the EKS module only allows the control plane in on 443, 4443, 6443, 8443, 9443 and 10250, while the injector listens on 8080. The webhook's failure policy is `Ignore`, so pods were created silently without the sidecar. Setting `injector.port: 8443` fixed it with no infrastructure change.
 
-**10. Vault Agent was not injected on EKS.** The same manifests that produced 2/2 pods on kind produced 0/1 pods on EKS that crashed because `/vault/secrets/database-cred.txt` did not exist. The injector is a mutating webhook, so the EKS control plane must reach the injector pod. The node security group from the EKS module only allows the control plane in on 443, 4443, 6443, 8443, 9443 and 10250, while the injector listens on 8080. The webhook's failure policy is `Ignore`, so pods were created silently without the sidecar. Setting `injector.port: 8443` fixed it with no infrastructure change.
+**10. Three Vault replicas on a two node cluster.** The chart's default anti-affinity is `required`, so the third pod would never schedule. I switched the EKS overlays to `preferred` anti-affinity, which placed two pods on one node and one on the other.
 
-**11. Three Vault replicas on a two node cluster.** The chart's default anti-affinity is `required`, so the third pod would never schedule. I switched the EKS overlays to `preferred` anti-affinity, which placed two pods on one node and one on the other.
+**11. Leftovers that Terraform cannot see.** Kubernetes creates the NLB (from the ingress-nginx Service) and the EBS volumes (from Vault's PVCs). I deleted them before destroying the cluster and checked AWS directly. I also found a dangling Route 53 CNAME from Project 26 pointing at a load balancer that no longer existed and removed it, since dangling DNS records are a known security risk.
 
-**12. Leftovers that Terraform cannot see.** Kubernetes creates the NLB (from the ingress-nginx Service) and the EBS volumes (from Vault's PVCs). I deleted them before destroying the cluster and checked AWS directly. I also found a dangling Route 53 CNAME from Project 26 pointing at a load balancer that no longer existed and removed it, since dangling DNS records are a known security risk.
+## Outdated Documentation Pitfalls
 
-**13. A plan file was committed.** The `*.tfplan` rule I appended to `.gitignore` was glued onto the previous line because the file did not end with a newline. I removed the file from the repository and fixed the rule. The token inside it had expired and the cluster was already destroyed, so no further action was needed.
+Much of the published guidance for this stack predates current versions. These are the places where following it as written would have failed or caused problems.
 
-## Corrections to the Original Course Material
-
-| Course material | Issue | What I did |
+| Original approach | Issue | What I did |
 |---|---|---|
-| `steghub/tooling-app:1.0.2` image | No longer exists on Docker Hub | Built the image from my fork of the tooling repo and pushed it to ECR |
+| Prebuilt `tooling-app:1.0.2` image on Docker Hub | No longer exists on Docker Hub | Built the image from my fork of the tooling repo and pushed it to ECR |
 | `resources: - ../../bases` | Typo, the folder is `base` | Used `../../base` |
 | `patchesStrategicMerge` | Deprecated in current Kustomize | Used `patches` |
-| `labels` without `includeSelectors` | Current Kustomize no longer adds these labels to selectors by default, unlike the course's screenshot | Added `includeSelectors: true` |
+| `labels` without `includeSelectors` | Current Kustomize no longer adds these labels to selectors by default | Added `includeSelectors: true` |
 | Vault chart 0.28.1 | Outdated | Chart 0.34.1 (Vault 2.0.4), after checking the default values had not changed shape |
 | `seal "awskms"` placed under `server.standalone.config` | The chart ignores the standalone config in HA mode, so auto-unseal would silently never be configured | Placed the seal stanza inside `server.ha.raft.config` |
 | Raft `autopilot` block with `min_quorum = 5` | Does not fit a 3 node cluster | Left out, using autopilot defaults |
@@ -500,7 +500,7 @@ A $10 budget alert was in place for the whole session.
 * **Kustomize** keeps environments consistent from one base, and generators plus the `images` transformer cover most per-environment differences without templates.
 * **Helm and Kustomize work well together:** Helm for packaged third-party software, Kustomize for environment-specific values and patches.
 * **Vault Agent injection** keeps credentials out of manifests and out of Kubernetes Secrets entirely, with access controlled by Kubernetes identity and Vault policy.
-* **Auto-unseal is not optional in practice.** Running Shamir unseal locally, through a power cut, made the case for KMS better than any documentation.
+* **Auto-unseal is not optional in practice.** Unsealing by hand locally after every restart made the case for KMS better than any documentation.
 * **Local first saves money and time.** Almost every problem in this project was found and fixed on kind, where it cost nothing to retry.
 * **"Works locally, fails on EKS" is often networking.** The injector failure came from a security group rule, not from Vault or Kubernetes configuration.
 * **Teardown needs a plan.** Resources created by Kubernetes must be removed before the cluster, and an independent region sweep is the only way to be sure nothing is still billing.
