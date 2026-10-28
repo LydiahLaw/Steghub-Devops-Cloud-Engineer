@@ -57,7 +57,6 @@ Vault auto-unseals with AWS KMS through an IRSA role, the database runs on Auror
 8. The aurora-init Job creates the three databases and loads the schema.
 9. EKS nodes pull the tooling image from Amazon ECR.
 
-The editable source is embedded in the PNG, so it can be opened and updated directly in draw.io.
 
 ## Tools and Versions
 
@@ -110,7 +109,7 @@ EKS with its supporting resources costs roughly $1 an hour. To keep the bill sma
 2. **Prepare (free):** write and validate the Terraform and the EKS specific overlays without applying anything.
 3. **Run on AWS (paid):** apply, swap the database host and unseal method, verify and destroy in one sitting.
 
-By the time I touched AWS, the remaining work was mostly applying tested code, so the EKS session took about two and a half hours.
+By the time I touched AWS, the remaining work was mostly applying tested code.
 
 ## Phase 1: Local Build on kind
 
