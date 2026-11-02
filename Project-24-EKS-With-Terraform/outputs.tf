@@ -41,3 +41,8 @@ output "vpc_cidr_block" {
   description = "VPC CIDR, used to allow MySQL traffic from inside the VPC"
   value       = module.vpc.vpc_cidr_block
 }
+
+output "node_security_group_id" {
+  description = "EKS node security group, used by Project 27 to restrict Aurora access to the cluster nodes"
+  value       = module.eks_cluster.node_security_group_id
+}

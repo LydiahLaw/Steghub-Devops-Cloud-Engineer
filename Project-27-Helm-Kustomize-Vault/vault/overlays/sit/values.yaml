@@ -92,7 +92,7 @@ server:
     create: true
     name: vault-kms
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::835960997504:role/vaultKMS
+      eks.amazonaws.com/role-arn: arn:aws:iam::AWS_ACCOUNT_ID:role/vaultKMS
 
 ui:
   enabled: true

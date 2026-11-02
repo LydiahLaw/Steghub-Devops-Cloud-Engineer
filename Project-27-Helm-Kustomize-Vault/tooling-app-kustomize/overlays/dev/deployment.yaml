@@ -8,7 +8,7 @@ spec:
     metadata:
       annotations:
         vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "tooling-role"
+        vault.hashicorp.com/role: "tooling-dev"
         vault.hashicorp.com/agent-inject-status: "update"
         vault.hashicorp.com/agent-requests-cpu: "50m"
         vault.hashicorp.com/agent-limits-cpu: "100m"

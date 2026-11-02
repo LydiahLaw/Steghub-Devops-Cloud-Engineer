@@ -8,13 +8,16 @@ labels:
 resources:
   - ../../base
   - namespace.yaml
+  - service-account.yaml
 patches:
   - path: deployment.yaml
+  - target:
+      kind: Deployment
+      name: tooling-deployment
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/env
 images:
   - name: tooling-app
-    newName: 835960997504.dkr.ecr.us-west-1.amazonaws.com/tooling-app
+    newName: AWS_ACCOUNT_ID.dkr.ecr.us-west-1.amazonaws.com/tooling-app
     newTag: "1.0.1"
-secretGenerator:
-  - name: tooling-db-credentials
-    envs:
-      - db.env

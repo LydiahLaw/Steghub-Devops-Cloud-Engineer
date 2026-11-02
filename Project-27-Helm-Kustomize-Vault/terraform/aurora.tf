@@ -10,15 +10,15 @@ resource "aws_db_subnet_group" "aurora" {
 
 resource "aws_security_group" "aurora" {
   name        = "tooling-aurora"
-  description = "MySQL access from inside the EKS VPC only"
+  description = "MySQL access from EKS worker nodes only"
   vpc_id      = local.eks.vpc_id
 
   ingress {
-    description = "MySQL from the VPC"
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = [local.eks.vpc_cidr_block]
+    description     = "MySQL from EKS nodes only"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [local.eks.node_security_group_id]
   }
 
   egress {
